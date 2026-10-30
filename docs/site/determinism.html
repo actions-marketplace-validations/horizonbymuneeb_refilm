@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Determinism — refilm</title>
+<meta name="description" content="The byte-identical guarantee: what it covers, what it does not, and how to check it yourself with sha256sum.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../site/style.css">
+<script src="../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../index.html">Overview</a></li>
+            <li><a href="../site/getting-started.html">Getting started</a></li>
+            <li><a href="../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../site/determinism.html" aria-current="page">Determinism</a></li>
+            <li><a href="../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<span class="eyebrow">Topic</span>
+<h1>Determinism</h1>
+<p class="lede">
+  Same input, same output. Every number refilm reports rests on this: if two captures of the same
+  page could differ, a comparison would be measuring the machine instead of the clone.
+</p>
+
+<h2 id="how">How the guarantee is made</h2>
+
+<p>
+  Under <code>--clock virtual</code> the page does not run on the wall clock. The capturer owns
+  time and advances it by hand, frame by frame:
+</p>
+
+<ul>
+  <li><code>performance.now</code> and <code>Date</code> return the virtual time</li>
+  <li><code>setTimeout</code>, <code>setInterval</code> and <code>requestAnimationFrame</code> fire on it</li>
+  <li>CSS and WAAPI animation time follows it</li>
+  <li>event timestamps follow it</li>
+  <li><code>Math.random</code> is seeded, so <code>--seed 1</code> produces the same particles every time</li>
+</ul>
+
+<p>
+  The consequence is the sentence the whole tool is built on: <strong>frame <em>k</em> is exactly
+  <em>t = k/fps</em>, however slow the machine is</strong>. A frame that took 40 ms to render and one
+  that took 400 ms land at the same timestamp, so a dropped frame cannot shift the time base.
+</p>
+
+<div class="callout">
+  <span class="callout__label">Why it had to be built</span>
+  <p>
+    Without it, a software-GL box drops frames and random particles differ on every load. The
+    comparison then reports the difference between two runs of your machine, which is noise wearing
+    the costume of a measurement.
+  </p>
+</div>
+
+<h2 id="verify-yourself">Verify it yourself</h2>
+
+<p>
+  Two captures, one page, the same seed. The frame hashes are identical — and you can check that
+  with two commands and no refilm-specific tooling:
+</p>
+
+<pre class="cmd"><code>refilm record --url ./page.html --out a --clock virtual --seed 1 --duration 1500
+refilm record --url ./page.html --out b --clock virtual --seed 1 --duration 1500</code></pre>
+
+<pre class="cmd"><code>cd a/frames &amp;&amp; sha256sum *.png | md5sum
+cd ../../b/frames &amp;&amp; sha256sum *.png | md5sum</code></pre>
+
+<pre class="out"><code>1a6517c65e84eccf241a97745a1025b2  -
+1a6517c65e84eccf241a97745a1025b2  -</code></pre>
+
+<p>One frame at a time, if you want to see the actual hashes rather than a digest of the list:</p>
+
+<pre class="cmd"><code>sha256sum a/frames/0007.png b/frames/0007.png</code></pre>
+
+<pre class="out"><code>95b67dc2b0766bd8aec8f8424b468da4cb896ea8a8e199ce851237682d9d3e3e  a/frames/0007.png
+95b67dc2b0766bd8aec8f8424b468da4cb896ea8a8e199ce851237682d9d3e3e  b/frames/0007.png</code></pre>
+
+<p>
+  This holds for DOM pages and for WebGL scenes. The test suite asserts it too: one test hashes every
+  frame of two <code>--clock virtual</code> captures, and a control fixture uses real
+  <code>Math.random</code> so the seed cannot be silently ignored and still pass.
+</p>
+
+<h2 id="not-covered">What it does not cover</h2>
+
+<div class="tw">
+  <table>
+    <caption>Where the guarantee stops. Each row is a real limit, not a disclaimer.</caption>
+    <thead><tr><th>Case</th><th>Byte-identical?</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>--clock real</code></td>
+        <td><strong>No</strong></td>
+        <td>the page runs on the wall clock and the frames are cut out of an encoded video; encoding and dropped frames make two runs differ. Two real-clock captures of the same page hash differently — that is expected, and it is why canvas work must use <code>--clock virtual</code>.</td>
+      </tr>
+      <tr>
+        <td>workers' own clocks</td>
+        <td>partly</td>
+        <td>workers are seeded and traced, but their own clocks run in real time</td>
+      </tr>
+      <tr>
+        <td>network content</td>
+        <td>no</td>
+        <td>a page that fetches live data, an ad, a font from a CDN or a random image will differ. The guarantee is about time, not about what the server sent.</td>
+      </tr>
+      <tr>
+        <td><code>--gpu hardware</code> vs <code>software</code></td>
+        <td>no</td>
+        <td>two different renderers. Identical pixels are a software-GL promise; record both sides with the same <code>--gpu</code> mode.</td>
+      </tr>
+      <tr>
+        <td>a different <code>--seed</code></td>
+        <td>no</td>
+        <td>different random stream, different particles — by design. Use the same seed on both sides.</td>
+      </tr>
+      <tr>
+        <td>different refilm versions</td>
+        <td>not promised</td>
+        <td>the in-page scripts can change between versions. Compare captures made with the same version.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="why-compare-cares">Why <code>compare</code> reads <code>capture.json</code></h2>
+
+<p>
+  Determinism is a property of one capture; a meaningful comparison is a property of two. So
+  <code>compare</code> reads <code>capture.json</code> on both sides and warns when the viewport,
+  fps, trigger, clock or seed disagree:
+</p>
+
+<pre class="out"><code>setupWarnings:
+  - viewport differs: reference 1440x900, clone 1280x800
+  - clock differs: reference virtual (seed 1), clone real</code></pre>
+
+<p>
+  Treat that warning as a failure. It does not mean the clone is slightly off — it means the
+  comparison is not measuring the clone at all.
+</p>
+
+<h2 id="rules">The rules that follow</h2>
+
+<ol class="steps">
+  <li>
+    <b>Same settings on both sides</b>
+    <p>Viewport, crop, fps, trigger, duration, clock, seed. Change only <code>--url</code> and <code>--out</code> between the reference and the clone.</p>
+  </li>
+  <li>
+    <b>Virtual clock for anything with a canvas</b>
+    <p>Real-clock canvas captures drop frames, and the drop depends on the machine. <a href="canvas.html">Canvas and 3D</a>.</p>
+  </li>
+  <li>
+    <b>Keep captures short</b>
+    <p>≤ 3 s on a software-GL box. Long captures drop frames even on the virtual clock if the page is expensive.</p>
+  </li>
+  <li>
+    <b>Same refilm version both sides</b>
+    <p>Pin it in CI: <code>npx refilm@0.1.2 verify …</code>.</p>
+  </li>
+</ol>
+
+<h2 id="next">Next</h2>
+
+<ul>
+  <li><a href="canvas.html">Canvas and 3D</a> — where the virtual clock is mandatory rather than helpful.</li>
+  <li><a href="commands/record.html"><code>refilm record</code></a> — <code>--clock</code>, <code>--seed</code>, <code>--raf-hz</code>, <code>--network-wait</code>.</li>
+  <li><a href="agents.html">Using it from an agent</a> — the CI recipe that pins the version.</li>
+</ul>
+
+    <nav class="pager" aria-label="Topic pages">
+      <a href="canvas.html"><span class="k">Previous</span>Canvas and 3D</a>
+      <a class="next" href="agents.html"><span class="k">Next</span>Using it from an agent</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

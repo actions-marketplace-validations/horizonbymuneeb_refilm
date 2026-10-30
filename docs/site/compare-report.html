@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading a compare report — refilm</title>
+<meta name="description" content="How to read offset, timing error, mean mismatch and the activity curve — and what each failure means.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../site/style.css">
+<script src="../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../index.html">Overview</a></li>
+            <li><a href="../site/getting-started.html">Getting started</a></li>
+            <li><a href="../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../site/compare-report.html" aria-current="page">Reading a compare report</a></li>
+            <li><a href="../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../site/determinism.html">Determinism</a></li>
+            <li><a href="../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<span class="eyebrow">Topic</span>
+<h1>Reading a compare report</h1>
+<p class="lede">
+  <code>refilm compare</code> writes <code>report.md</code> for humans, <code>report.json</code> with
+  the same numbers typed, and <code>diff/NNNN.png</code> with red where the pixels differ. Read them
+  in a fixed order or the numbers will mislead you.
+</p>
+
+<figure>
+  <img src="../media/compare-report.png" width="1712" height="770"
+       alt="A full refilm compare report rendered as markdown: header lines for frames compared, mean mismatch with its threshold and FAIL verdict, the motion window for reference and clone, timing error per phase with its limit, a worst-frames table, and a long per-frame activity chart with horizontal bars for reference and clone side by side.">
+  <figcaption>
+    <b>A real report from this repository's demo.</b> Header numbers first, then the activity chart.
+    The chart is the part you cannot get from any other tool — it makes easing and stagger visible
+    before you open a single frame.
+  </figcaption>
+</figure>
+
+<h2 id="order">Read it in this order</h2>
+
+<ol class="steps">
+  <li>
+    <b><code>setupWarnings</code> — stop if it is not empty</b>
+    <p>If the two captures were made with different settings, nothing below means anything. Re-record with the same command, changing only <code>--url</code> and <code>--out</code>.</p>
+  </li>
+  <li>
+    <b><code>offset</code> — how far the clone is shifted</b>
+    <p>A big offset is a trigger or delay problem, not a rendering problem. Do not let auto-alignment hide it.</p>
+  </li>
+  <li>
+    <b><code>timing error</code> — start, end, duration, peak</b>
+    <p>The motion metric that is independent of colours, fonts and copy. This is the verdict for <code>motion</code> work.</p>
+  </li>
+  <li>
+    <b><code>mean mismatch</code> — the pixel metric</b>
+    <p>For <code>motion</code> fidelity, a trend. For <code>pixel</code>, the verdict.</p>
+  </li>
+  <li>
+    <b><code>worst frames</code> — go and look at them</b>
+    <p>Open those frames on the compare sheet. This is where you find out <em>what</em> is off.</p>
+  </li>
+</ol>
+
+<h2 id="header">The header, line by line</h2>
+
+<pre class="out"><code>- frames: 46 compared of 50 reference frames at 25 fps, 1080x408, clone offset -4 (auto-aligned)
+- mean mismatch: **6.57%** (limit 5.00%) → FAIL
+- worst frames: #18 9.5% @0.72s, #19 9.5% @0.76s, #17 9.4% @0.68s, #20 9.0% @0.8s
+- motion window — reference 3–20 (0.72s, peak #3); clone 8–14 (0.28s, peak #14)
+- timing error (clone − reference): start 0.200s, end -0.240s, duration -0.440s, peak 0.440s (limit ±0.08s)</code></pre>
+
+<div class="tw">
+  <table>
+    <caption>What each field is, and what it is not.</caption>
+    <thead><tr><th>Field</th><th>Is</th><th>Is not</th></tr></thead>
+    <tbody>
+      <tr><td><code>frames compared</code></td><td>the intersection of both frame sets at the same fps</td><td>a failure when it is less than the reference count — it means the clone's recording was shorter</td></tr>
+      <tr><td><code>offset</code></td><td>the clone frame that best matches reference frame 0, found by auto-alignment</td><td>a rendering difference</td></tr>
+      <tr><td><code>mean mismatch</code></td><td>the fraction of differing pixels, averaged over compared frames</td><td>a motion verdict at <code>motion</code> fidelity</td></tr>
+      <tr><td><code>motion window</code></td><td>first, last and peak frame with visible change, per side, measured from the pixel activity curve</td><td>the declared animation range</td></tr>
+      <tr><td><code>timing error</code></td><td>clone minus reference, in seconds, for start / end / duration / peak</td><td>a per-element number — that is what <code>verify</code> gives you</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="activity">The activity curve</h2>
+
+<pre class="out"><code>frame    t(s)   reference                     clone
+    0    0.00   ·                               ·
+    1    0.04   ██████████████████████████████  ██████████████████████████████
+    2    0.08   █████████████████████████       █████████████████████████
+    3    0.12   ██████████████████████          ██████████████████████
+    4    0.16   ████████████████████████        ████████████████████████
+    5    0.20   █████████                       █████████
+    6    0.24   ███████████                     ███████████</code></pre>
+
+<p>
+  Each bar is how much changed since the previous frame, with each side normalised to its own peak.
+  The <em>shape</em> is the easing and the stagger. This is the part that makes easing debuggable
+  without staring at frames.
+</p>
+
+<div class="tw">
+  <table>
+    <caption>The five shapes you will actually see.</caption>
+    <thead><tr><th>You see</th><th>It means</th><th>First fix</th></tr></thead>
+    <tbody>
+      <tr><td>bars front-loaded in the clone, even in the reference</td><td>the clone's easing is too strong — expo where the reference is quint</td><td>change the easing family, not the duration</td></tr>
+      <tr><td>bars flat and even in the clone, spiky in the reference</td><td>linear where the reference is ease-out</td><td>same — the family is wrong</td></tr>
+      <tr><td>bars in the clone where the reference has none</td><td>something animates that should be still</td><td>a stray transition, or a hover the pointer triggered</td></tr>
+      <tr><td>bars shifted right in the clone</td><td>a delay is too long</td><td>per-item delay math, or <code>--wait-before</code></td></tr>
+      <tr><td>fewer, taller bars in the clone</td><td>the clone drops frames</td><td>the capture settings, not the code</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="sheets">Sheets: reference, clone, diff</h2>
+
+<pre class="cmd"><code>refilm sheet compare --ref ref/frames --clone clone-1/frames \
+  --diff compare-1/diff --out compare-1/sheets --every 2</code></pre>
+
+<figure>
+  <img src="../media/sheet-compare.png" width="1600" height="760"
+       alt="A labelled contact sheet: each row is one timestamp, with the reference frame, the clone frame and the pixel diff in three columns, and the mismatch percentage printed per row.">
+  <figcaption>
+    One row per timestamp: reference, clone, diff. Read every sheet, not just the first — the
+    interesting part of a motion is usually the middle, and the last frames tell you whether the end
+    state holds.
+  </figcaption>
+</figure>
+
+<h2 id="failures">Failure → first thing to check</h2>
+
+<div class="tw">
+  <table>
+    <caption>The short table. The full version with the reasoning is in the workflow page.</caption>
+    <thead><tr><th>What you see</th><th>First thing to check</th></tr></thead>
+    <tbody>
+      <tr><td>offset large</td><td>trigger timing, <code>--wait-before</code>, a missing initial delay</td></tr>
+      <tr><td>duration short, front-loaded</td><td>easing too aggressive, or the duration taken from the visible window instead of the declared one</td></tr>
+      <tr><td>start late, end on time</td><td>delay too long <em>and</em> duration too short — fix both together</td></tr>
+      <tr><td>mismatch high at rest</td><td>layout, fonts, crop — not motion</td></tr>
+      <tr><td>overshoot in the reference only</td><td>spring vs bezier</td></tr>
+      <tr><td>stagger gaps wrong</td><td>per-item delay math</td></tr>
+      <tr><td>last frames differ</td><td>fill mode / end state (<code>animation-fill-mode: forwards</code>)</td></tr>
+      <tr><td>everything differs, timing is fine</td><td>element boxes are the wrong size</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="fit">The per-element version</h2>
+
+<p>
+  <code>compare</code> works on whole frames. When you need to know which element is late, use the
+  track: <code>fit</code> reports the delay, the visible duration, the overshoot and the best-fit
+  easing per element and property, and can diff two tracks directly.
+</p>
+
+<pre class="cmd"><code>refilm fit --track ref/track.json --selector ".card" --prop translateY \
+  --compare-track clone-1/track.json</code></pre>
+
+<pre class="out"><code>start 38 → end 0 (change -38)
+delay 300ms · visible duration 333ms · overshoot 0% · settles 517ms after it starts
+verdict: ease-out-quint over ~820ms (good fit)
+
+best fits (rmse over the normalised curve, duration fitted):
+   1. ease-out-quint         rmse 0.0000  ~820ms  cubic-bezier(0.22,1,0.36,1)  [ease-out]
+   2. ease-out-quint-alt     rmse 0.0022  ~834ms  cubic-bezier(0.23,1,0.32,1)  [ease-out]
+   3. ease-out-quart         rmse 0.0027  ~690ms  cubic-bezier(0.25,1,0.5,1)   [ease-out]</code></pre>
+
+<p>
+  Take <code>bestFits[0]</code> as the easing to declare — the bezier is ready to paste into CSS —
+  rebuild with the fitted duration, then re-run <code>fit</code> on the clone's track. A curve that
+  fits the same easing with a low RMSE is a motion match even when the pixels are still off.
+</p>
+
+<h2 id="next">Next</h2>
+
+<ul>
+  <li><a href="workflow.html">The workflow</a> — the fix table in full, and when to stop.</li>
+  <li><a href="fidelity.html">Fidelity levels</a> — which numbers are a verdict and which are a trend.</li>
+  <li><a href="commands/compare.html"><code>refilm compare</code></a> — every flag that changes this report.</li>
+</ul>
+
+    <nav class="pager" aria-label="Topic pages">
+      <a href="fidelity.html"><span class="k">Previous</span>Fidelity levels</a>
+      <a class="next" href="canvas.html"><span class="k">Next</span>Canvas and 3D</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

@@ -134,40 +134,32 @@ refilm doctor</code></pre>
 </ol>
 
 <p>
-  The loop only works because the failure is specific. This is round&nbsp;1 of a real run —
-  the plausible first pass an agent writes, same layout, cards rising together in
-  <span class="num">420&nbsp;ms</span> on a linear curve instead of the reference's
-  <span class="num">820&nbsp;ms</span> ease-out with a <span class="num">100&nbsp;ms</span> stagger:
-</p>
-
-<div class="fig-pair">
-  <figure>
-    <p class="res res--fail">Round 1 · <code>result: FAIL — 37 check(s) failed (exit 1)</code></p>
-    <img src="media/verify-fail.png" width="1556" height="498"
-         alt="Terminal output of refilm verify in round 1: each line names a check, its measured difference in milliseconds and the limit, for example easing ease-out to linear and duration -175 ms against a limit of ±80 ms. The run ends with result: FAIL — 37 check(s) failed (exit 1).">
-  </figure>
-  <figure>
-    <p class="res res--pass">Round 2 · <code>result: PASS (exit 0)</code></p>
-    <img src="media/verify-pass.png" width="1462" height="498"
-         alt="Terminal output of refilm verify in round 2: 49 checks pass and 0 fail, and 11 checks are skipped with a written reason, ending with result: PASS (exit 0).">
-  </figure>
-</div>
-
-<p>
-  Not "looks different" but <em>ease-out&nbsp;→&nbsp;linear</em>,
-  <em>−700&nbsp;ms (limit ±80&nbsp;ms)</em>, <em>travel 14.1% (limit ≤10%)</em>. Round&nbsp;2
-  passes <span class="num">49</span> checks — and skips <span class="num">11</span> with a
-  reason, because a skip is not a pass.
+  The loop only works because the failure is specific. Below is one real run: the plausible first
+  pass an agent writes — same layout, cards rising together in <span class="num">420&nbsp;ms</span>
+  on a linear curve instead of the reference's <span class="num">820&nbsp;ms</span> ease-out with a
+  <span class="num">100&nbsp;ms</span> stagger — and then the same clone after fixing exactly what
+  the report named.
 </p>
 
 <figure>
-  <img src="media/compare-report.png" width="1712" height="770"
-       alt="A refilm compare report: mean mismatch, the motion window on both sides, timing error per phase, a table of the worst frames and a per-frame activity chart drawn as horizontal bars for reference and clone.">
+  <p class="res res--fail">Round 1 · <code>result: FAIL — 37 check(s) failed (exit 1)</code></p>
+  <img src="media/verify-fail.png" width="1556" height="498"
+       alt="Terminal output of refilm verify in round 1: each line names a check, its measured difference in milliseconds and the limit, for example easing ease-out to linear and duration -175 ms against a limit of ±80 ms. The run ends with result: FAIL — 37 check(s) failed (exit 1).">
   <figcaption>
-    <b>The activity chart is what makes easing debuggable.</b> Bar length is how much changed
-    since the previous frame; the same shape means the same easing and stagger. A clone that is
-    front-loaded against an even reference is using too strong an ease-out — and you can see it
-    before you look at a single frame. <a href="site/compare-report.html">How to read it</a>.
+    Not "looks different" but <em>ease-out&nbsp;→&nbsp;linear</em>,
+    <em>−700&nbsp;ms (limit ±80&nbsp;ms)</em>, <em>travel 14.1% (limit ≤10%)</em>. Every failure is
+    a number and a named cause.
+  </figcaption>
+</figure>
+
+<figure>
+  <p class="res res--pass">Round 2 · <code>result: PASS (exit 0)</code></p>
+  <img src="media/verify-pass.png" width="1462" height="498"
+       alt="Terminal output of refilm verify in round 2: 49 checks pass and 0 fail, and 11 checks are skipped with a written reason, ending with result: PASS (exit 0).">
+  <figcaption>
+    <span class="num">49</span> checks pass, <span class="num">0</span> fail — and
+    <span class="num">11</span> are skipped with a reason, because a skip is not a pass and refilm
+    refuses to report a check it could not measure as green.
   </figcaption>
 </figure>
 

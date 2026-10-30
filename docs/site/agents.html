@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using it from an agent — refilm</title>
+<meta name="description" content="The bundled skill, the --json envelope, the exit-code contract and the CI recipe.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../site/style.css">
+<script src="../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../index.html">Overview</a></li>
+            <li><a href="../site/getting-started.html">Getting started</a></li>
+            <li><a href="../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../site/determinism.html">Determinism</a></li>
+            <li><a href="../site/agents.html" aria-current="page">Using it from an agent</a></li>
+            <li><a href="../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<span class="eyebrow">Topic</span>
+<h1>Using it from an agent</h1>
+<p class="lede">
+  Any agent that can run a shell command can use refilm. Two things make that reliable rather than
+  lucky: a bundled skill that says when to reach for it, and a machine contract — one JSON envelope,
+  five exit codes — that never requires parsing human output.
+</p>
+
+<h2 id="skill">The bundled skill</h2>
+
+<pre class="cmd"><code>refilm install --agent claude    # also: codex, dsh, all</code></pre>
+
+<div class="tw">
+  <table>
+    <caption>Targets. <code>all</code> installs into every target whose parent directory exists.</caption>
+    <thead><tr><th>Agent</th><th>Directory</th></tr></thead>
+    <tbody>
+      <tr><td><code>claude</code></td><td><code>~/.claude/skills/refilm/</code></td></tr>
+      <tr><td><code>codex</code></td><td><code>~/.codex/skills/refilm/</code></td></tr>
+      <tr><td><code>dsh</code></td><td><code>$DSH_HOME/skills/refilm/</code>, falling back to <code>~/.dsh-home/skills/refilm/</code></td></tr>
+      <tr><td><code>all</code></td><td>every target whose parent directory exists</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+  The skill is a thin wrapper. It tells the agent when to reach for refilm, how to state a fidelity
+  level, and how to read the numbers — while all the measurement lives in the CLI. It copies
+  <code>SKILL.md</code> and <code>references/</code> from the package's own <code>skill/</code>
+  directory, downloads nothing, and touches nothing outside those three paths. <code>--dry-run</code>
+  prints the resolved targets and changes nothing.
+</p>
+
+<h2 id="json">The <code>--json</code> envelope</h2>
+
+<p>
+  Every command takes <code>--json</code> and prints exactly one envelope on stdout, with logs on
+  stderr. Success and failure share the same shape, so an agent never has to branch on "did this
+  print JSON at all".
+</p>
+
+<pre class="out"><code>{
+  "ok": true,
+  "command": "verify",
+  "version": "0.1.2",
+  "warnings": [],
+  "data": {
+    "schema": 1,
+    "kind": "verify",
+    "fidelity": "motion",
+    "pass": true,
+    "checks": [
+      {
+        "id": "div-eyebrow-opacity.start",
+        "label": "div.eyebrow opacity start",
+        "status": "pass",
+        "measured": "+0 ms",
+        "limit": "±80 ms",
+        "detail": "reference -633 ms, clone -633 ms"
+      }
+    ],
+    "counts": { "pass": 49, "fail": 0, "skip": 11 },
+    "artifacts": { }
+  }
+}</code></pre>
+
+<p>And the same shape when it fails — the errors array replaces <code>data</code>:</p>
+
+<pre class="out"><code>{
+  "ok": false,
+  "command": "compare",
+  "version": "0.1.2",
+  "warnings": [],
+  "errors": [
+    {
+      "code": "USAGE",
+      "message": "compare needs --ref &lt;framesDir&gt; --clone &lt;framesDir&gt; --out &lt;dir&gt;",
+      "hint": "example: refilm compare --ref .refilm/ref/frames --clone .refilm/clone/frames --out .refilm/diff"
+    }
+  ]
+}</code></pre>
+
+<div class="tw">
+  <table>
+    <caption>The envelope contract. Nothing may write to stdout except through the reporter.</caption>
+    <thead><tr><th>Field</th><th>Type</th><th>Always present</th><th>Means</th></tr></thead>
+    <tbody>
+      <tr><td><code>ok</code></td><td>boolean</td><td>yes</td><td>the command succeeded</td></tr>
+      <tr><td><code>command</code></td><td>string</td><td>yes</td><td>which command produced this</td></tr>
+      <tr><td><code>version</code></td><td>string</td><td>yes</td><td>the refilm version — pin against it</td></tr>
+      <tr><td><code>warnings</code></td><td>string[]</td><td>yes (may be empty)</td><td>non-fatal problems, for example a <code>setupWarnings</code> mismatch</td></tr>
+      <tr><td><code>data</code></td><td>object</td><td>on success</td><td>the payload, <code>schema</code>-versioned and <code>kind</code>-tagged</td></tr>
+      <tr><td><code>errors</code></td><td>object[]</td><td>on failure</td><td><code>code</code>, <code>message</code> and usually a copy-pasteable <code>hint</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="exits">The exit-code contract</h2>
+
+<div class="tw">
+  <table>
+    <caption>Stable across every command. This is what an agent or a CI job branches on.</caption>
+    <thead><tr><th class="num">Code</th><th>Name</th><th>Means</th><th>Agent should</th></tr></thead>
+    <tbody>
+      <tr><td class="num"><code>0</code></td><td>success</td><td>the command did its job</td><td>read <code>data</code>, continue</td></tr>
+      <tr><td class="num"><code>1</code></td><td>verification failed</td><td>the clone does not match — <code>compare</code>, <code>gl compare</code>, <code>verify</code>, <code>report --check</code></td><td>read the failing checks, fix one cause, re-record. <strong>Not</strong> a crash.</td></tr>
+      <tr><td class="num"><code>2</code></td><td>usage error</td><td>a flag is missing or wrong, a path does not exist</td><td>fix the command from the <code>hint</code>; do not retry unchanged</td></tr>
+      <tr><td class="num"><code>3</code></td><td>environment problem</td><td>node, ffmpeg or Chromium missing or unusable</td><td>run <code>refilm doctor</code>, report the fix line, stop</td></tr>
+      <tr><td class="num"><code>4</code></td><td>internal error</td><td>a bug, or the browser died mid-capture</td><td>re-run once; if it repeats, file the envelope</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout">
+  <span class="callout__label">The distinction that matters</span>
+  <p>
+    <code>1</code> and <code>2</code> are completely different messages. <code>1</code> means the
+    tool worked and the clone does not match — keep iterating. <code>2</code> means the agent's
+    command was wrong — fix the invocation. An agent that treats both as "error, give up" throws
+    away the entire product.
+  </p>
+</div>
+
+<h2 id="ci">The CI recipe</h2>
+
+<p>
+  An animation regression becomes a red build instead of a review comment nobody can measure.
+  Pin the version: the in-page scripts are part of the capture, so reference and clone should come
+  from the same refilm.
+</p>
+
+<pre class="cmd"><code>npx refilm@0.1.2 verify \
+  --spec .refilm/runs/hero/spec.json \
+  --ref .refilm/runs/hero/ref \
+  --clone .refilm/runs/hero/clone-1 \
+  --json</code></pre>
+
+<pre class="out"><code>name: motion
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npx playwright install --with-deps chromium
+      - run: npx refilm doctor
+      - name: film both sides, then gate
+        run: |
+          npx refilm@0.1.2 record --url "$REF_URL" --out .refilm/ref \
+            --selector ".hero" --trigger load --duration 1800 --clock virtual
+          npx refilm@0.1.2 record --url "$CLONE_URL" --out .refilm/clone \
+            --selector ".hero" --trigger load --duration 1800 --clock virtual
+          npx refilm@0.1.2 verify --spec .refilm/runs/hero/spec.json \
+            --ref .refilm/ref --clone .refilm/clone --json</code></pre>
+
+<p>
+  Commit the spec and keep the reference capture as a CI artifact, or re-film the reference on every
+  run — but if you re-film it, use <code>--clock virtual</code> so the reference does not drift.
+  <a href="determinism.html">Determinism</a> explains why.
+</p>
+
+<h3>What the agent's loop looks like</h3>
+
+<ol class="steps">
+  <li>
+    <b>State the fidelity level</b>
+    <p>From the words used. <code>motion</code> unless the ask was "exactly" or "1:1".</p>
+  </li>
+  <li>
+    <b>Record, look, spec</b>
+    <p><code>record</code> → <code>sheet filmstrip</code> → <code>spec</code>. Resolve every row in <code>unresolved</code> before writing code.</p>
+  </li>
+  <li>
+    <b>Build in the project's own stack</b>
+    <p>Reuse the animation library already in the repository. Do not introduce GSAP for a CSS project.</p>
+  </li>
+  <li>
+    <b>Loop on <code>verify</code>'s exit code</b>
+    <p>Record the clone the same way, <code>compare</code>, <code>sheet compare</code>, <code>verify</code>. Exit 1 names the check; change one cause; repeat. Expect 2–5 rounds.</p>
+  </li>
+  <li>
+    <b>Report with numbers</b>
+    <p><code>report --dir …</code> for the file, plus a table of the last round: per-check measured vs limit. Every residual deviation gets a number and a reason.</p>
+  </li>
+</ol>
+
+<div class="callout">
+  <span class="callout__label">Never lower a threshold to make a run green</span>
+  <p>
+    If a looser bar is genuinely appropriate — a font licence you do not hold, a particle generator
+    you cannot port — say which threshold and why, and let the person decide. A green run with a
+    quietly relaxed limit is worse than a red one.
+  </p>
+</div>
+
+<h2 id="programmatic">Programmatic use</h2>
+
+<pre class="cmd"><code>import { record, compare, verify } from "refilm";
+
+const cap = await record({ url: "https://example.com", out: ".refilm/ref", duration: 1800 });
+const cmp = await compare({ ref: ".refilm/ref/frames", clone: ".refilm/clone-1/frames", out: ".refilm/cmp" });
+if (!cmp.pass) console.log(cmp.failures);</code></pre>
+
+<p>
+  Each helper resolves with the same object the CLI prints under <code>data</code>, so the shape is
+  documented once and tested once.
+</p>
+
+<h2 id="next">Next</h2>
+
+<ul>
+  <li><a href="commands/install.html"><code>refilm install</code></a> — targets, <code>--dry-run</code>, <code>--force</code>.</li>
+  <li><a href="determinism.html">Determinism</a> — why CI should pin the version and the clock.</li>
+  <li><a href="commands/index.html">Command reference</a> — the exit codes each command can actually return.</li>
+</ul>
+
+    <nav class="pager" aria-label="Topic pages">
+      <a href="determinism.html"><span class="k">Previous</span>Determinism</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvas, WebGL and 3D — refilm</title>
+<meta name="description" content="Recording GPU traces, the virtual clock, channel kinds and gl compare.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../site/style.css">
+<script src="../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../index.html">Overview</a></li>
+            <li><a href="../site/getting-started.html">Getting started</a></li>
+            <li><a href="../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../site/canvas.html" aria-current="page">Canvas and 3D</a></li>
+            <li><a href="../site/determinism.html">Determinism</a></li>
+            <li><a href="../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<span class="eyebrow">Topic</span>
+<h1>Canvas, WebGL and 3D</h1>
+<p class="lede">
+  A canvas only shows pixels, so <code>refilm record --gl</code> records the calls that drew them:
+  shader sources, every constant uniform, the render passes, the textures and models, and each
+  animated uniform or scene-graph property as a curve that can be fitted and compared.
+</p>
+
+<h2 id="record">Record the trace</h2>
+
+<pre class="cmd"><code>refilm record --url https://example.com --out ref \
+  --clock virtual --gl --assets --duration 2000 --fps 20
+refilm gl summary ref</code></pre>
+
+<div class="tw">
+  <table>
+    <caption>Three flags, and what each one buys you.</caption>
+    <thead><tr><th>Flag</th><th>What it does</th><th>Without it</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>--clock virtual</code></td>
+        <td>the page runs on a clock advanced frame by frame — <code>performance.now</code>, <code>Date</code>, timers, <code>requestAnimationFrame</code>, CSS/WAAPI timing and event timestamps all follow it — with <code>Math.random</code> seeded. Frame <em>k</em> is exactly <em>t = k/fps</em> whatever the GPU or machine load, and two captures of the same scene are byte-identical.</td>
+        <td>a software-GL box drops frames and random particles differ on every load, so the comparison measures the machine</td>
+      </tr>
+      <tr>
+        <td><code>--gl</code></td>
+        <td>traces WebGL, WebGL2, WebGPU and canvas 2D, and hooks the three.js, Pixi, PlayCanvas, Babylon and OGL scene graphs through their own devtools entry points — including inside workers.</td>
+        <td>you get frames and pixels, but no shaders, uniforms, passes or channels</td>
+      </tr>
+      <tr>
+        <td><code>--assets</code></td>
+        <td>saves the models, textures, shader files, Lottie/Rive/Spline files and scripts the page loaded.</td>
+        <td>you can read the shader source, but you cannot reuse the model or texture</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+  <code>--gpu software</code> is the default: SwiftShader is slower, but it produces the same pixels
+  on every machine. <code>--gpu hardware</code> uses the real GPU and enables WebGPU. Record
+  <strong>both</strong> sides with the same mode, or you are comparing two renderers.
+</p>
+
+<p>Output on disk:</p>
+
+<pre class="out"><code>gl/gl.json          gl/draws.json      gl/summary.md
+gl/shaders/         gl-track.json      assets/ + assets.json</code></pre>
+
+<h2 id="channels">Channel kinds</h2>
+
+<p>
+  Every animated value becomes a channel, and every channel is classified. The classification is
+  the useful part: it tells you how to implement it, not just that it moves.
+</p>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm gl channels</code>. A channel's kind is what decides the implementation.</caption>
+    <thead><tr><th>Kind</th><th>Meaning</th><th>How to implement it</th></tr></thead>
+    <tbody>
+      <tr><td><code>clock</code></td><td>advances linearly with time (<code>+0.9/s</code>)</td><td>drive it from a clock at that rate</td></tr>
+      <tr><td><code>transition</code></td><td>monotonic move from A to B inside a window</td><td>that window is the duration; fit the easing</td></tr>
+      <tr><td><code>there-and-back</code></td><td>leaves and returns</td><td>two-phase; note the turn point</td></tr>
+      <tr><td><code>oscillation</code></td><td>periodic</td><td>period and amplitude, usually a sine</td></tr>
+      <tr><td><code>steps</code></td><td>discrete jumps</td><td>a state machine, not an interpolation</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="reading">Reading the trace</h2>
+
+<pre class="cmd"><code>refilm gl summary ref
+refilm gl channels ref --grep emissive
+refilm gl channels ref --series "three:s0/Mesh#2.rotation.x"</code></pre>
+
+<pre class="out"><code># GPU trace: ref
+
+renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver) · 112 frames traced · 1 draw calls per frame
+
+## Canvases
+- c1 webgl on canvas#c: 480×360 px, css 480×360 at 0,0 (pixel ratio 1), antialias true, alpha true
+
+## Programs (shaders in gl/shaders/)
+- **p1**: 1/frame, TRIANGLE_STRIP up to 4 verts, no-blend (gl/shaders/p1.vert, gl/shaders/p1.frag)
+  - animated: uHover
+  - fixed: uTint=[0.35,0.55,1]
+  - attributes: p 2×FLOAT buf b1
+
+## One frame per canvas, in draw order (render target: draws)
+- c1 canvas#c → screen: p1 TRIANGLE_STRIP 4 [no-blend]
+
+## Animated channels (1; read one with: refilm gl channels &lt;dir&gt; --series KEY)
+- p1.uHover: there-and-back, 0.000037791 → 0.99989, changes -650–1183 ms</code></pre>
+
+<p>
+  <code>gl summary</code> separates <strong>animated</strong> from <strong>fixed</strong> uniforms,
+  and that split matters: the fixed ones are the art direction. A single wrong constant changes the
+  whole look, so copy them exactly rather than approximating them.
+</p>
+
+<h3>Fit a channel like a DOM property</h3>
+
+<pre class="cmd"><code>refilm fit --track ref/gl-track.json --channel "three:s0/Mesh#2.rotation.x"</code></pre>
+
+<p>
+  Same output shape as a DOM track: delay, visible duration, overshoot, settle time, and the
+  best-fitting named easings with an RMSE and a fitted duration each.
+</p>
+
+<h2 id="compare">Comparing a clone</h2>
+
+<pre class="cmd"><code>refilm gl compare --ref ref --clone clone-1 --grep emissive --timing 80</code></pre>
+
+<pre class="out"><code># GPU compare: ref vs clone-1
+
+## Canvases
+| canvas   | reference                                                    | clone                                                        |
+|----------|--------------------------------------------------------------|--------------------------------------------------------------|
+| canvas#c | webgl 480×360 px (ratio 1), antialias true, alpha true        | webgl 480×360 px (ratio 1), antialias true, alpha true        |
+
+## Draw structure (draw calls per traced frame, by primitive · vertices · state)
+| draws                          | reference | clone |
+|--------------------------------|-----------|-------|
+| TRIANGLE_STRIP 4 [no-blend]    | 1         | 1     |
+
+## Animated channels (1 in the reference; uniform time "clock" channels are skipped)
+| reference | | clone | timing and value error | result |
+|---|---|---|---|---|
+| p1.uHover | there-and-back 0.000037791→0.99989 -650–1183 ms | p1.uHover: there-and-back … | start +0 ms, end +0 ms, mean |Δ| 0.0 % of range | pass |
+
+pass: same kind, start and end within 80 ms, mean value error ≤ 5 % of the reference range. 0 of 1 failing.</code></pre>
+
+<p>
+  It checks three layers, in order: canvas attributes and renderer settings, draw structure
+  (primitive, vertex count, blend state, cadence), then every animated channel — same kind, start
+  and end within <code>--timing</code> ms, mean error ≤ <span class="num">5%</span> of the
+  reference's range. Use <code>--map "uHover=u_hover"</code> when the clone's channel names differ.
+</p>
+
+<p>
+  <strong>Exit code <span class="num">1</span> when any channel fails.</strong> Same gate contract
+  as <code>verify</code>, so a canvas animation can fail a build the same way a CSS one does.
+</p>
+
+<h2 id="build">Building the clone</h2>
+
+<ol class="steps">
+  <li>
+    <b>Same engine, same version</b>
+    <p>Port the shaders from <code>gl/shaders/</code> verbatim where they are yours to use, and keep every constant uniform exactly as recorded.</p>
+  </li>
+  <li>
+    <b>Copy the fixed uniforms</b>
+    <p>They are the art direction, not noise. <code>gl summary</code> already separates them from the animated channels.</p>
+  </li>
+  <li>
+    <b>Drive each animated channel</b>
+    <p>With the timing and easing its curve showed, through the same property — uniform, object transform, camera.</p>
+  </li>
+  <li>
+    <b>Match the render passes</b>
+    <p>A four-pass composite is not one pass with a fancy shader.</p>
+  </li>
+  <li>
+    <b>Match the renderer settings</b>
+    <p>Context attributes, tone mapping, colour space, pixel ratio.</p>
+  </li>
+  <li>
+    <b>Frame-rate-independent smoothing for pointer values</b>
+    <p><code>x += (target − x) · (1 − (1 − k) ** (dt / 16.67))</code>. A naive <code>lerp(x, target, 0.1)</code> per frame moves at a different speed on a 120 Hz display.</p>
+  </li>
+  <li>
+    <b>Random content</b>
+    <p>If you port the generator, seed it the same way and the particles match dot for dot. If you cannot, say so and compare with <code>compare --blur</code>.</p>
+  </li>
+</ol>
+
+<h2 id="limits">Limits worth knowing</h2>
+
+<ul>
+  <li><strong>Workers</strong> are seeded and traced, but their own clocks run in real time.</li>
+  <li><strong>Canvases inside iframes</strong> need the iframe's own URL.</li>
+  <li><strong>Random generators you cannot port</strong> mean particles are compared with a blurred mismatch — density, colour, motion — instead of dot by dot.</li>
+  <li><strong>Software GL is slow.</strong> Keep canvas captures short (≤ 2 s) and the viewport modest.</li>
+  <li><strong>A canvas that renders nothing</strong> after a <code>--gl</code> run is usually a script that failed to load. Check the page console before blaming the tracer.</li>
+  <li><strong>Rebuilding a shader from screenshots</strong> is wasted work: <code>gl summary</code> already has the source and every constant uniform.</li>
+</ul>
+
+<h2 id="next">Next</h2>
+
+<ul>
+  <li><a href="determinism.html">Determinism</a> — why the virtual clock is the whole basis of the comparison.</li>
+  <li><a href="commands/gl.html"><code>refilm gl</code></a> — the three subcommands and their flags.</li>
+  <li><a href="commands/record.html"><code>refilm record</code></a> — every capture flag, including <code>--gl-buffers</code> and <code>--gpu</code>.</li>
+</ul>
+
+    <nav class="pager" aria-label="Topic pages">
+      <a href="compare-report.html"><span class="k">Previous</span>Reading a compare report</a>
+      <a class="next" href="determinism.html"><span class="k">Next</span>Determinism</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

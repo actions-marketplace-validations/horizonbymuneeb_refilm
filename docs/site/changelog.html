@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changelog — refilm</title>
+<meta name="description" content="Every release of refilm, newest first.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../site/style.css">
+<script src="../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../index.html">Overview</a></li>
+            <li><a href="../site/getting-started.html">Getting started</a></li>
+            <li><a href="../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../site/determinism.html">Determinism</a></li>
+            <li><a href="../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../site/changelog.html" aria-current="page">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<span class="eyebrow">Changelog</span>
+<h1>Changelog</h1>
+<p class="lede">
+  Every release of refilm, newest first. The format follows
+  <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a> and the project adheres to
+  <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.
+</p>
+
+<div class="callout">
+  <span class="callout__label">Upgrading from 0.1.0 or 0.1.1</span>
+  <p>
+    Both were <strong>broken when installed from npm</strong> — the published package was missing
+    <code>dist/inpage/</code>, so every <code>refilm record</code> failed with
+    <code>in-page script clock.js not found</code>. Upgrade to 0.1.2.
+  </p>
+</div>
+
+<article class="release">
+  <div class="release__head">
+    <span class="release__ver">0.1.2</span>
+    <span class="release__date">2026-10-30</span>
+    <span class="tag">packaging</span>
+  </div>
+
+  <p>
+    Packaging fix. <strong>0.1.0 and 0.1.1 were broken when installed from npm</strong> — upgrade if
+    you installed either.
+  </p>
+
+  <h3><span class="tag tag--fixed">Fixed</span></h3>
+
+  <ul>
+    <li>
+      <strong>The published package was missing <code>dist/inpage/</code>.</strong>
+      <code>clock.js</code> and <code>gl-hooks.js</code> are plain browser scripts, so <code>tsc</code>
+      never copied them into <code>dist/</code>; a source checkout hid this because the engine also
+      looks in <code>src/inpage/</code>. Every <code>refilm record</code> from an npm install failed
+      with <code>in-page script clock.js not found</code>. The build now copies them, and
+      <code>npm run verify:dist</code> asserts the packaged shape — all 12 commands, the in-page
+      scripts, the skill references, and that every README image path ships.
+    </li>
+  </ul>
+
+  <h3><span class="tag tag--added">Added</span></h3>
+
+  <ul>
+    <li>
+      <code>npm run verify:dist</code> — a check that the package is installable as published, not
+      just runnable from a checkout. This is the class of bug a source tree cannot reveal.
+    </li>
+  </ul>
+</article>
+
+<article class="release">
+  <div class="release__head">
+    <span class="release__ver">0.1.1</span>
+    <span class="release__date">2026-10-30</span>
+    <span class="tag">documentation · correctness</span>
+  </div>
+
+  <p>Documentation and correctness release. No breaking changes.</p>
+
+  <h3><span class="tag tag--added">Added</span></h3>
+
+  <ul>
+    <li>
+      <strong>A real worked example in the README.</strong> <code>demo/</code> holds a reference page
+      and two clone rounds: round 1 is the plausible-looking first pass an agent writes, round 2
+      fixes exactly what the report named. The README images are the tool's own output on those
+      pages — <code>verify</code> failing with 37 named checks, then passing with 49, plus the
+      compare report and a labelled contact sheet.
+    </li>
+    <li>
+      <strong><code>docs/media/</code></strong> — the comparison GIF, the verify screenshots, the
+      compare report and the contact sheet, all generated from the demo run and committed so the
+      README renders offline.
+    </li>
+    <li>
+      <strong>Programmatic API</strong> (<code>src/index.ts</code>): <code>record</code>,
+      <code>compare</code>, <code>verify</code>, … resolve with the same object the CLI prints under
+      <code>data</code>, and <code>toArgv()</code> converts an options object into CLI flags.
+    </li>
+    <li>
+      <strong><code>scale-in.html</code> test fixture</strong> — the only fixture that animates a
+      uniform <code>scale</code>, plus a regression test for it.
+    </li>
+    <li><code>refilm report --check</code> now gates a report that already exists on disk.</li>
+  </ul>
+
+  <h3><span class="tag tag--fixed">Fixed</span></h3>
+
+  <ul>
+    <li>
+      <strong><code>verify</code> stillness check rejected uniform scale.</strong> The spec records
+      one <code>scale</code> for a declared transform while the tracker exposes the matrix as two
+      axes (<code>scaleX</code>, <code>scaleY</code>), so a correct clone failed with "the clone
+      animates <code>.card.scaleY</code>, which the spec does not describe". Property aliases now map
+      the two spellings onto each other (<code>scale</code> ⇄ <code>scaleX</code>/<code>scaleY</code>,
+      <code>translateX</code> ⇄ <code>x</code>, <code>translateY</code> ⇄ <code>y</code>).
+    </li>
+    <li>
+      <strong><code>report</code> broke the <code>--json</code> contract on its usage-error paths</strong>
+      — exit 2 with no output at all, which an agent parses as a crash. Both paths now emit the
+      standard error envelope.
+    </li>
+    <li>
+      <strong><code>report --check</code> could never fail</strong>: it regenerated the report and
+      scanned the string it was about to write. It now leaves the file alone, re-reads it from disk,
+      and exits 1 when any non-<code>data:</code> <code>src</code>/<code>href</code> is present.
+    </li>
+    <li>
+      <strong><code>report</code> overflowed horizontally at 390px</strong> (404px on a phone). Wide
+      tables now scroll inside a wrapper; measured 0 overflow at 1440×980 and 390×844.
+    </li>
+    <li>
+      <strong><code>init</code> / <code>report</code> were missing from the command dispatch</strong>,
+      so both failed with "Cannot find module".
+    </li>
+  </ul>
+</article>
+
+<article class="release">
+  <div class="release__head">
+    <span class="release__ver">0.1.0</span>
+    <span class="release__date">2026-10-30</span>
+    <span class="tag">first release</span>
+  </div>
+
+  <p>First release.</p>
+
+  <h3><span class="tag tag--added">Added</span></h3>
+
+  <ul>
+    <li>
+      <code>record</code> — films a page deterministically: video, numbered frames, declared
+      CSS/WAAPI animations with exact timing, per-frame element tracks, fonts, detected libraries.
+      Triggers: load, scroll, hover, leave, move, drag, click, none.
+    </li>
+    <li><code>frames</code> — cuts a video or gif into numbered frames with a known time base.</li>
+    <li>
+      <code>spec</code> — derives the motion spec from evidence (declared animations → element tracks
+      → GL channels → pixels, in that order of preference) and lists what it could not measure as
+      <code>unresolved</code> rather than guessing.
+    </li>
+    <li>
+      <code>compare</code> — frame-by-frame pixel mismatch, auto-alignment, motion window, timing
+      error, per-frame activity curve, diff images.
+    </li>
+    <li>
+      <code>fit</code> — fits a tracked curve to named easings, reporting duration, delay, overshoot
+      and whether it looks spring-like.
+    </li>
+    <li><code>sheet</code> — labelled contact sheets (filmstrip and reference/clone/diff).</li>
+    <li>
+      <code>gl</code> — reads a WebGL/WebGPU/canvas trace: scene graph, shaders, constant uniforms,
+      render passes, and every animated channel, plus a reference-vs-clone channel diff.
+    </li>
+    <li>
+      <code>verify</code> — the gate: every spec row checked against the pass criteria, exit 1 on
+      failure, and unmeasurable checks reported as <code>skip</code> with a reason.
+    </li>
+    <li><code>report</code> — one self-contained, offline-safe HTML report.</li>
+    <li><code>install</code> — installs the bundled agent skill for Claude Code, Codex or DSH.</li>
+    <li><code>init</code> — scaffolds <code>.refilm/</code> in a project, idempotently.</li>
+    <li>
+      <code>doctor</code> — checks node, ffmpeg and Chromium and prints the exact fix for anything
+      missing.
+    </li>
+    <li>
+      <code>--clock virtual</code>: a page clock advanced frame by frame with <code>Math.random</code>
+      seeded, so frame <em>k</em> is exactly <em>t = k/fps</em> and two captures are byte-identical.
+    </li>
+    <li>
+      Every command supports <code>--json</code> with one envelope and documented exit codes
+      (<code>0</code> ok, <code>1</code> verification failed, <code>2</code> usage,
+      <code>3</code> environment, <code>4</code> internal).
+    </li>
+  </ul>
+</article>
+
+<h2 id="next">Next</h2>
+
+<ul>
+  <li><a href="getting-started.html">Getting started</a> — install 0.1.2 and take one animation through the loop.</li>
+  <li><a href="commands/index.html">Command reference</a> — what each command does now.</li>
+  <li><a href="https://github.com/horizonbymuneeb/refilm/releases">Releases on GitHub</a></li>
+</ul>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>
