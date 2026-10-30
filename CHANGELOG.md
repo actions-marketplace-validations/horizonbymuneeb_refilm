@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] — 2026-10-30
+
+Packaging fix. **0.1.0 and 0.1.1 were broken when installed from npm** — upgrade if you
+installed either.
+
+### Fixed
+
+- **The published package was missing `dist/inpage/`.** `clock.js` and `gl-hooks.js` are plain
+  browser scripts, so `tsc` never copied them into `dist/`; a source checkout hid this because
+  the engine also looks in `src/inpage/`. Every `refilm record` from an npm install failed with
+  `in-page script clock.js not found`. The build now copies them, and `npm run verify:dist`
+  asserts the packaged shape (all 12 commands, in-page scripts, skill references, and that every
+  README image path ships).
+
+### Added
+
+- `npm run verify:dist` — a check that the package is installable as published, not just runnable
+  from a checkout. This is the class of bug a source tree cannot reveal.
+
 ## [0.1.1] — 2026-10-30
 
 Documentation and correctness release. No breaking changes.

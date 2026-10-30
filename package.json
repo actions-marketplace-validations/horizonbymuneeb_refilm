@@ -1,6 +1,6 @@
 {
   "name": "refilm",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Record a reference animation, rebuild it in your code, re-film the copy and compare frame by frame until it matches.",
   "keywords": [
     "animation",
@@ -41,11 +41,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
     "test": "node --test --test-concurrency=1 test/unit/*.test.js test/integration/*.test.js",
     "test:unit": "node --test test/unit/*.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js"
+    "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js",
+    "verify:dist": "node scripts/verify-dist.mjs"
   },
   "license": "MIT",
   "dependencies": {

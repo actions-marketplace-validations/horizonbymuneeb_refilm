@@ -138,7 +138,7 @@ This drops the bundled skill into the agent's skill directory. The skill is a th
 Every command takes `--json` and prints one envelope, so an agent never has to scrape human output:
 
 ```json
-{ "ok": true, "command": "compare", "version": "0.1.1", "warnings": [], "data": { } }
+{ "ok": true, "command": "compare", "version": "0.1.2", "warnings": [], "data": { } }
 ```
 
 Exit codes: `0` success · `1` verification failed · `2` usage error · `3` environment problem · `4` internal error.
