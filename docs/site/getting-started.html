@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting started — refilm</title>
+<meta name="description" content="Install refilm, check the environment, scaffold a project and complete a first end-to-end run.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../site/style.css">
+<script src="../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../index.html">Overview</a></li>
+            <li><a href="../site/getting-started.html" aria-current="page">Getting started</a></li>
+            <li><a href="../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../site/determinism.html">Determinism</a></li>
+            <li><a href="../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<span class="eyebrow">Start here · ~10 minutes</span>
+<h1>Getting started</h1>
+<p class="lede">
+  Install refilm, let it check the machine, scaffold a run directory, then take one animation
+  through the full loop. Every command below is real output from this repository's demo.
+</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<div class="tw">
+  <table>
+    <caption>Checked by <code>refilm doctor</code>. Nothing is downloaded behind your back.</caption>
+    <thead>
+      <tr><th>Requirement</th><th>Why</th><th>If it is missing</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Node 20+</strong></td>
+        <td>the ESM and <code>fetch</code> baseline refilm is built against</td>
+        <td><code>nvm install 20</code>, or any Node 20+ installer</td>
+      </tr>
+      <tr>
+        <td><strong>ffmpeg</strong></td>
+        <td>cutting frames out of the recording, probing a video or gif</td>
+        <td><code>apt install ffmpeg</code> / <code>brew install ffmpeg</code>, or set <code>REFILM_FFMPEG</code></td>
+      </tr>
+      <tr>
+        <td><strong>Playwright Chromium</strong></td>
+        <td>the browser that films the page</td>
+        <td><code>npx playwright install chromium</code></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="install">Install</h2>
+
+<p>Global install gives you the <code>refilm</code> binary. <code>npx</code> works too and is the
+better choice for CI, where the version should be pinned by the lockfile.</p>
+
+<pre class="cmd"><code>npm install -g refilm</code></pre>
+<pre class="cmd"><code>npx refilm@0.1.2 --version</code></pre>
+
+<div class="callout">
+  <span class="callout__label">Upgrading</span>
+  <p>
+    0.1.0 and 0.1.1 were broken when installed from npm — the published package was missing
+    <code>dist/inpage/</code>, so every <code>refilm record</code> failed with
+    <code>in-page script clock.js not found</code>. 0.1.2 fixes it. See the
+    <a href="changelog.html">changelog</a>.
+  </p>
+</div>
+
+<h2 id="doctor">Check the machine</h2>
+
+<p><code>doctor</code> runs four required checks and one advisory one, prints the exact command
+that fixes anything missing, and exits <span class="num">3</span> when something required is
+missing. It installs nothing.</p>
+
+<pre class="cmd"><code>refilm doctor</code></pre>
+<pre class="out"><code>refilm doctor — ready (4 ok, 1 warn, 0 fail)
+
+  ok    node      v26.7.0
+  ok    ffmpeg    6.1.1-3ubuntu5 (on PATH)
+  ok    chromium  Playwright Chromium 156.0.8078.4 launches and closes
+  ok    writable  /home/you/project is writable
+  warn  runDir    no .refilm/ in /home/you/project yet
+        fix: refilm init            # scaffolds .refilm/ with runs/ and config.json
+
+ready to film (warnings do not block)</code></pre>
+
+<p>The Chromium check actually launches and closes the browser, so a broken sandbox or a missing
+shared library fails here rather than three steps into a capture.</p>
+
+<h2 id="init">Scaffold the project</h2>
+
+<p><code>init</code> creates <code>.refilm/config.json</code> and <code>.refilm/runs/</code>, and
+adds <code>.refilm/</code> to <code>.gitignore</code> when a <code>.gitignore</code> exists. It is
+idempotent: run it twice and it keeps what is already there.</p>
+
+<pre class="cmd"><code>refilm init</code></pre>
+<pre class="out"><code>  created  .refilm/
+  created  .refilm/runs/
+  created  .refilm/config.json
+  created  .gitignore (+.refilm/)
+
+next:
+  refilm record --url &lt;url&gt; --out .refilm/runs/&lt;name&gt;/ref --selector "&lt;section&gt;" --trigger load
+  refilm spec   --capture .refilm/runs/&lt;name&gt;/ref --out .refilm/runs/&lt;name&gt;</code></pre>
+
+<h2 id="first-run">A first complete run</h2>
+
+<p>
+  One section, one trigger, both sides filmed the same way. The reference here is the demo page
+  in <code>demo/reference/index.html</code>: a pricing hero whose eyebrow, heading, sub-paragraph
+  and three cards rise in sequence.
+</p>
+
+<h3>1 · Record the reference</h3>
+
+<pre class="cmd"><code>refilm record --url https://example.com --out .refilm/runs/hero/ref \
+  --selector ".hero" --trigger load --duration 1800 \
+  --track ".eyebrow, h1, .sub, .card"</code></pre>
+
+<pre class="out"><code>[launch] chromium (software gl, 1440x900 @1x)
+[load] https://example.com
+[inspect] animations, keyframes, styles, fonts, libraries
+[frames] cutting frames out of video.webm
+[write] capture.json
+capture     .refilm/runs/hero/ref
+page        Pricing hero — https://example.com
+viewport    1440x900 @1x · 25 fps · real clock
+frames      50 · cropped 1080x409 at 180,245
+trigger     load · trigger frame 5 · 1800 ms
+motion      9 animations · 3 keyframes · 0 canvases · 33 nodes
+track       62 samples of .eyebrow, h1, .sub, .card
+renderer    ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver)</code></pre>
+
+<p>
+  <code>--track</code> is the flag that pays for itself: it samples position, size, opacity and
+  transform of each listed element every frame, which is what lets <code>fit</code> name a curve
+  later. Track the elements you will animate, plus any parent that moves.
+</p>
+
+<h3>2 · Look at the frames</h3>
+
+<p>The numbers say something is off; the contact sheet says what. Do this before writing any code.</p>
+
+<pre class="cmd"><code>refilm sheet filmstrip --frames .refilm/runs/hero/ref/frames \
+  --out .refilm/runs/hero/ref/sheets --cols 6</code></pre>
+
+<pre class="out"><code>rendered .refilm/runs/hero/ref/sheets/sheet-01.png</code></pre>
+
+<h3>3 · Derive the spec</h3>
+
+<pre class="cmd"><code>refilm spec --capture .refilm/runs/hero/ref \
+  --out .refilm/runs/hero/spec.json --name hero --md .refilm/runs/hero/spec.md</code></pre>
+
+<pre class="out"><code>spec hero — 18 row(s), 3 unresolved, 1660 ms total
+# | element        | property   | from → to | start | dur | easing                                | stagger | source   | conf
+1 | div.eyebrow    | opacity    | 0 → 1     | 0     | 620 | cubic-bezier(0.16, 1, 0.3, 1)/ease-out | –       | declared | high
+2 | div.eyebrow    | translateY | 14 → 0    | 0     | 620 | cubic-bezier(0.16, 1, 0.3, 1)/ease-out | –       | declared | high
+3 | h1             | opacity    | 0 → 1     | 90    | 760 | cubic-bezier(0.16, 1, 0.3, 1)/ease-out | –       | declared | high
+7 | article.card[0]| opacity    | 0 → 1     | 300   | 820 | cubic-bezier(0.22, 1, 0.36, 1)/ease-out | 100     | declared | high
+8 | article.card[0]| scale      | 0.97 → 1  | 300   | 820 | cubic-bezier(0.22, 1, 0.36, 1)/ease-out | 100     | declared | high
+…
+
+unresolved (3):
+  - .card.scaleY moves in the track (331 ms, 666 ms) but no declared animation explains it — likely a transition or a JS tween
+  - .card.x moves in the track (331 ms, 791 ms) but no declared animation explains it — likely a transition or a JS tween
+  - no fonts recorded in the capture: font family, weight and rendering are unverified, which pixel fidelity cannot survive</code></pre>
+
+<p>
+  <strong>Resolve the unresolved rows before you build.</strong> They are the honest half of the
+  spec: three things the evidence could not answer. Read more frames, track another element, or
+  ask the person who asked for the clone. Do not fill them with a guess and let them look measured.
+</p>
+
+<h3>4 · Build the clone</h3>
+
+<p>
+  Implement in the project's own stack, from the spec rows — not from the screenshot. If the
+  project already animates with CSS, do not add GSAP for this. Then give the clone a way to be
+  filmed identically: a route or a static page that renders the component at the reference
+  viewport with the same trigger.
+</p>
+
+<h3>5 · Re-film the clone and verify</h3>
+
+<pre class="cmd"><code>refilm record --url http://localhost:5173 --out .refilm/runs/hero/clone-1 \
+  --selector ".hero" --trigger load --duration 1800 \
+  --track ".eyebrow, h1, .sub, .card"</code></pre>
+
+<pre class="cmd"><code>refilm compare --ref .refilm/runs/hero/ref/frames \
+  --clone .refilm/runs/hero/clone-1/frames --out .refilm/runs/hero/compare-1</code></pre>
+
+<pre class="cmd"><code>refilm verify --spec .refilm/runs/hero/spec.json \
+  --ref .refilm/runs/hero/ref --clone .refilm/runs/hero/clone-1 \
+  --out .refilm/runs/hero/verify-1</code></pre>
+
+<pre class="out"><code>verify hero — motion fidelity: 12 pass, 37 fail, 11 skip
+  PASS div.eyebrow opacity start — -34 ms (limit ±80 ms)
+  FAIL div.eyebrow opacity end — -209 ms (limit ±80 ms)
+       reference 635 ms, clone 426 ms
+  FAIL div.eyebrow opacity easing — ease-out → linear (limit family ease-out, or ≤5% of travel)
+       the clone is linear where the reference is ease-out: that is a different kind of motion, not a near miss (curve distance 4.1%)
+  …
+  FAIL article.card stagger — -100, -100 ms (limit ±40 ms)
+       spec gaps 100, 100 ms; clone gaps 0, 0 ms
+  PASS nothing extra is moving — 0 (limit 0)
+
+result: FAIL — 37 check(s) failed (exit 1)
+note: 11 check(s) skipped; a skip is not a pass — see the reasons above</code></pre>
+
+<p>
+  Exit code <span class="num">1</span>. That is not an error, it is the gate doing its job: an
+  agent or a CI job can loop on it without reading a single line of prose.
+</p>
+
+<h3>6 · Fix what it named, and go again</h3>
+
+<p>
+  Round 1 was <span class="num">420&nbsp;ms</span> linear with no stagger. Round 2 sets the
+  declared durations and the real cubic-beziers, and adds the per-card delay:
+</p>
+
+<pre class="out"><code>verify hero — motion fidelity: 49 pass, 0 fail, 11 skip
+  PASS div.eyebrow opacity start — +0 ms (limit ±80 ms)
+  PASS div.eyebrow opacity easing — ease-out-expo → ease-out-expo (limit family ease-out)
+  PASS article.card stagger — -23, -5 ms (limit ±40 ms)
+  …
+result: PASS (exit 0)
+note: 11 check(s) skipped; a skip is not a pass — see the reasons above</code></pre>
+
+<div class="callout">
+  <span class="callout__label">Why 49 and not 60</span>
+  <p>
+    Eleven checks were skipped because the capture could not measure them — for example
+    <code>div.bar[0] scaleX</code> was never in <code>--track</code>, so its timing has no series
+    to compare. A skipped check names what was missing. Add the selector to <code>--track</code>
+    and re-record if you want it measured.
+  </p>
+</div>
+
+<h3>7 · Produce the report</h3>
+
+<pre class="cmd"><code>refilm report --dir .refilm/runs/hero --out .refilm/runs/hero/report.html</code></pre>
+
+<pre class="out"><code>wrote .refilm/runs/hero/report.html (61.8 KB, 2 round(s), 18 spec row(s))
+external references: 0 — opens offline</code></pre>
+
+<p>
+  One self-contained file with every round, the spec, the sheets and the numbers. <code>--check</code>
+  re-reads a report already on disk and exits <span class="num">1</span> if it would make any
+  external request.
+</p>
+
+<h2 id="next">Next</h2>
+
+<ul>
+  <li><a href="workflow.html">The workflow</a> — the loop in depth, plus the pass criteria with their real numbers.</li>
+  <li><a href="fidelity.html">Fidelity levels</a> — decide <code>motion</code>, <code>pixel</code> or <code>mixed</code> before you capture.</li>
+  <li><a href="agents.html">Using it from an agent</a> — the skill, the <code>--json</code> envelope and the CI recipe.</li>
+  <li><a href="commands/index.html">Command reference</a> — every flag, every exit code.</li>
+</ul>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

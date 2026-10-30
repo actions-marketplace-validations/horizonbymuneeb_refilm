@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm sheet — refilm</title>
+<meta name="description" content="Contact sheets — flags, output files, exit codes and a worked example.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html" aria-current="page">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>sheet</h1>
+  <p class="lede" style="margin-bottom:0">Labelled contact sheets you can actually look at.</p>
+  <div class="meta">
+    <span><b>Writes</b> files on disk</span>
+    <span><b>JSON</b> --json</span>
+    <span><b>Exit</b> 0 · 2</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+
+<pre class="cmd"><code>refilm sheet filmstrip --frames &lt;dir&gt; --out &lt;dir&gt; [options]
+refilm sheet compare   --ref &lt;dir&gt; --clone &lt;dir&gt; --out &lt;dir&gt; [options]</code></pre>
+
+<h2 id="flags">Flags</h2>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm sheet --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--fps N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">25</span></td>
+        <td>Used for the time labels. Default from <code>frames.json</code> / <code>capture.json</code> beside the frames.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--cols N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">6</span></td>
+        <td>Filmstrip: columns per sheet.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--per-sheet N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">24 / 8</span></td>
+        <td>Frames per sheet: 24 for filmstrip, 8 for compare.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--width N</span></td>
+        <td><span class="type">px</span></td>
+        <td><span class="dflt">240 / 420</span></td>
+        <td>Rendered width of each frame: 240 filmstrip, 420 compare.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--every K</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">1</span></td>
+        <td>Show every K-th frame.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--from I --to J</span></td>
+        <td><span class="type">index</span></td>
+        <td><span class="dflt">all</span></td>
+        <td>Frame index range, inclusive, 0-based.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--diff &lt;dir&gt;</span></td>
+        <td><span class="type">dir</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Compare: diff images from <code>refilm compare</code>, drawn as a third column.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--offset K</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">0</span></td>
+        <td>Compare: clone frame = reference frame + K. Take it from <code>report.json</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="writes">What it writes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Paths are relative to the directory you pass on the command line.</caption>
+    <thead><tr><th>Writes</th><th>What is in it</th></tr></thead>
+    <tbody>
+      <tr><td><code>sheet-01.png</code>, <code>sheet-02.png</code> …</td><td>and prints their paths. With <code>--json</code> the payload is <code>{ files: [...] }</code>.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="exit">Exit codes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Exit codes. The full contract is on <a href="../agents.html">Using it from an agent</a>.</caption>
+    <thead><tr><th class="num">Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="num"><code>0</code></td><td>sheets were written</td></tr>
+      <tr><td class="num"><code>2</code></td><td>usage error — no PNG frames in the given directory</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="example">Example</h2>
+
+<pre class="cmd"><code>refilm sheet filmstrip --frames .refilm/runs/hero/ref/frames --out ref/sheets --cols 6
+refilm sheet compare --ref ref/frames --clone clone-1/frames \
+  --diff compare-1/diff --out compare-1/sheets --every 2</code></pre>
+<pre class="out"><code>rendered ref/sheets/sheet-01.png
+ref/sheets/sheet-01.png
+
+rendered compare-1/sheets/sheet-01.png
+rendered compare-1/sheets/sheet-02.png
+compare-1/sheets/sheet-01.png
+compare-1/sheets/sheet-02.png</code></pre>
+
+<h2 id="notes">Notes</h2>
+
+<h3>This is not optional</h3>
+<p>The numbers say <em>something</em> is off; the sheets say <em>what</em>. Read every sheet, not just the first — the interesting part of a motion is usually the middle, and the last frames tell you whether the end state holds.</p>
+
+<h3>Filmstrip before you build</h3>
+<p>Look at the reference's own frames before writing any code. It costs one command and saves a round.</p>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="compare.html"><code>refilm compare</code></a> — produce the diff images</li>
+  <li><a href="record.html"><code>refilm record</code></a> — produce the frames</li>
+</ul>
+
+    <nav class="pager" aria-label="Command pages">
+      <a href="compare.html"><span class="k">Previous</span>refilm compare</a>
+      <a class="next" href="fit.html"><span class="k">Next</span>refilm fit</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

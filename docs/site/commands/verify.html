@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm verify — refilm</title>
+<meta name="description" content="The pass/fail gate — flags, output files, exit codes and a worked example.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html" aria-current="page">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>verify</h1>
+  <p class="lede" style="margin-bottom:0">The gate: evaluate every row of a spec against a clone.</p>
+  <div class="meta">
+    <span><b>Writes</b> files on disk</span>
+    <span><b>JSON</b> --json</span>
+    <span><b>Exit</b> 0 · 1 · 2 · 3</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+
+<pre class="cmd"><code>refilm verify --spec &lt;spec.json&gt; --ref &lt;captureDir|framesDir&gt; --clone &lt;captureDir|framesDir&gt; [--out &lt;dir&gt;] [--fidelity motion|pixel|mixed] [--region x,y,w,h] [--json]</code></pre>
+
+<h2 id="flags">Flags</h2>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm verify --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--spec &lt;file&gt;</span></td>
+        <td><span class="type">file</span></td>
+        <td><span class="dflt">required</span></td>
+        <td>The spec to hold the clone to, from <code>refilm spec</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--ref &lt;dir&gt;</span></td>
+        <td><span class="type">dir</span></td>
+        <td><span class="dflt">required</span></td>
+        <td>The reference capture: <code>frames/</code> plus an optional <code>track.json</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--clone &lt;dir&gt;</span></td>
+        <td><span class="type">dir</span></td>
+        <td><span class="dflt">required</span></td>
+        <td>The clone capture, made the same way.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--out &lt;dir&gt;</span></td>
+        <td><span class="type">dir</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Write <code>verify.json</code> and <code>verify.md</code> here.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--fidelity &lt;level&gt;</span></td>
+        <td><span class="type">motion|pixel|mixed</span></td>
+        <td><span class="dflt">the spec's</span></td>
+        <td>Which checks run.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--region x,y,w,h</span></td>
+        <td><span class="type">numbers</span></td>
+        <td><span class="dflt">whole frame</span></td>
+        <td>For <code>mixed</code>: the cloned region, in reference pixel coordinates.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--threshold T</span></td>
+        <td><span class="type">0..1</span></td>
+        <td><span class="dflt">0.02</span></td>
+        <td>Mean-mismatch limit for the pixel gate.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--json</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Machine-readable result.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="writes">What it writes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Paths are relative to the directory you pass on the command line.</caption>
+    <thead><tr><th>Writes</th><th>What is in it</th></tr></thead>
+    <tbody>
+      <tr><td><code>verify.json</code></td><td>per-check <code>status</code>, <code>measured</code>, <code>limit</code>, <code>detail</code>, plus <code>counts</code> and <code>artifacts</code>.</td></tr>
+      <tr><td><code>verify.md</code></td><td>the same, for a human.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="exit">Exit codes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Exit codes. The full contract is on <a href="../agents.html">Using it from an agent</a>.</caption>
+    <thead><tr><th class="num">Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="num"><code>0</code></td><td>every check passed or skipped</td></tr>
+      <tr><td class="num"><code>1</code></td><td>at least one check failed</td></tr>
+      <tr><td class="num"><code>2</code></td><td>usage error — missing flag, no such spec</td></tr>
+      <tr><td class="num"><code>3</code></td><td>environment problem</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="example">Example</h2>
+
+<pre class="cmd"><code>refilm verify --spec .refilm/runs/hero/spec.json \
+  --ref .refilm/runs/hero/ref --clone .refilm/runs/hero/clone-1 \
+  --out .refilm/runs/hero/verify-1</code></pre>
+<pre class="out"><code>verify hero — motion fidelity: 12 pass, 37 fail, 11 skip
+  PASS div.eyebrow opacity start — -34 ms (limit ±80 ms)
+  FAIL div.eyebrow opacity end — -209 ms (limit ±80 ms)
+       reference 635 ms, clone 426 ms
+  FAIL div.eyebrow opacity easing — ease-out → linear (limit family ease-out, or ≤5% of travel)
+       the clone is linear where the reference is ease-out: that is a different kind of motion, not a near miss (curve distance 4.1%)
+  FAIL article.card stagger — -100, -100 ms (limit ±40 ms)
+       spec gaps 100, 100 ms; clone gaps 0, 0 ms
+  SKIP div.bar[0] scaleX timing
+       the reference track has no scaleX series for div.bar[0] (tracked: .eyebrow, h1, .sub, .card)
+  PASS nothing extra is moving — 0 (limit 0)
+
+result: FAIL — 37 check(s) failed (exit 1)
+note: 11 check(s) skipped; a skip is not a pass — see the reasons above</code></pre>
+
+<h2 id="notes">Notes</h2>
+
+<h3>The exit code is the product</h3>
+<p><code>1</code> while the clone does not match. It turns "looks about right" into a gate an agent or a CI job can loop on.</p>
+
+<h3>Checks per fidelity</h3>
+<p><strong>motion</strong>: start/end/duration ±80 ms, easing family or ≤5% of travel, stagger gaps ±40 ms, travel ≤10%, nothing moving that should be still. <strong>pixel</strong>: mean mismatch ≤2%, no frame above 5%, rest frames ≤0.5%, fonts identical. <strong>mixed</strong>: the cloned region passes one of the above; additions are not compared.</p>
+
+<h3>A skip is not a pass</h3>
+<p>An unmeasurable check names what was missing and stays <code>skip</code>. A green run that skipped its checks is worse than a red one.</p>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="spec.html"><code>refilm spec</code></a> — produce the spec</li>
+  <li><a href="../workflow.html">workflow</a> — the pass criteria in context</li>
+</ul>
+
+    <nav class="pager" aria-label="Command pages">
+      <a href="gl.html"><span class="k">Previous</span>refilm gl</a>
+      <a class="next" href="report.html"><span class="k">Next</span>refilm report</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

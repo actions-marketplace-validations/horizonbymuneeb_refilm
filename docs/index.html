@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm — stop guessing, measure the animation</title>
+<meta name="description" content="Record a reference animation, rebuild it in your code, then re-film the copy and compare the two frame by frame until the numbers match.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="site/style.css">
+<script src="site/site.js" defer></script>
+</head>
+<body class="land">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="index.html" aria-current="page">Overview</a></li>
+            <li><a href="site/getting-started.html">Getting started</a></li>
+            <li><a href="site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="site/determinism.html">Determinism</a></li>
+            <li><a href="site/agents.html">Using it from an agent</a></li>
+            <li><a href="site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<section class="hero">
+  <div>
+    <span class="eyebrow">Node CLI · MIT · zero telemetry</span>
+    <h1>Stop guessing. Measure the animation.</h1>
+    <p class="hero__sub">
+      refilm records a reference animation, derives a numeric motion spec from the
+      evidence, then re-films your rebuilt copy and compares the two frame by frame
+      until timing, easing, stagger and layout match. <code>refilm verify</code> exits
+      <span class="num">1</span> while they do not.
+    </p>
+    <div class="hero__cta">
+      <a class="btn" href="site/getting-started.html">Get started</a>
+      <a href="site/commands/index.html">Command reference</a>
+      <a href="site/workflow.html">How the loop works</a>
+    </div>
+    <pre class="cmd"><code>npm install -g refilm
+refilm doctor</code></pre>
+    <p class="small muted" style="margin:0">
+      Node 20+, ffmpeg, Playwright's Chromium. No account, no API key, no telemetry.
+    </p>
+  </div>
+
+  <figure class="hero__fig">
+    <img src="media/compare.gif" width="720" height="992"
+         alt="A 46-frame comparison: the reference animation plays on top, the rebuilt clone below, both filmed at the same timestamps. The clone uses different copy and a different accent colour.">
+    <figcaption>
+      The same 1.8&nbsp;s entrance, filmed identically. Top: the reference. Bottom: the
+      clone — different copy, different accent colour, which is what motion fidelity allows.
+    </figcaption>
+  </figure>
+</section>
+
+<h2>The loop, and what each step produces</h2>
+
+<ol class="loop">
+  <li>
+    <span class="loop__n">01</span>
+    <span class="loop__t">Record</span>
+    <span class="loop__d">Film the reference with the same viewport, trigger and duration you will use on the clone. <code>record</code></span>
+  </li>
+  <li>
+    <span class="loop__n">02</span>
+    <span class="loop__t">Spec</span>
+    <span class="loop__d">One row per element per property: start, duration, from&nbsp;→&nbsp;to, easing, stagger. <code>spec</code></span>
+  </li>
+  <li>
+    <span class="loop__n">03</span>
+    <span class="loop__t">Build</span>
+    <span class="loop__d">Implement in your own stack against the spec, not against a screenshot. <code>fit</code></span>
+  </li>
+  <li>
+    <span class="loop__n">04</span>
+    <span class="loop__t">Verify</span>
+    <span class="loop__d">Re-film the clone the same way and check every spec row. <code>verify</code></span>
+  </li>
+  <li>
+    <span class="loop__n">05</span>
+    <span class="loop__t">Fix</span>
+    <span class="loop__d">Each failure names a number and a cause. Change one thing, go again. <code>compare</code></span>
+  </li>
+</ol>
+
+<p>
+  The loop only works because the failure is specific. This is round&nbsp;1 of a real run —
+  the plausible first pass an agent writes, same layout, cards rising together in
+  <span class="num">420&nbsp;ms</span> on a linear curve instead of the reference's
+  <span class="num">820&nbsp;ms</span> ease-out with a <span class="num">100&nbsp;ms</span> stagger:
+</p>
+
+<div class="fig-pair">
+  <figure>
+    <p class="res res--fail">Round 1 · <code>result: FAIL — 37 check(s) failed (exit 1)</code></p>
+    <img src="media/verify-fail.png" width="1556" height="498"
+         alt="Terminal output of refilm verify in round 1: each line names a check, its measured difference in milliseconds and the limit, for example easing ease-out to linear and duration -175 ms against a limit of ±80 ms. The run ends with result: FAIL — 37 check(s) failed (exit 1).">
+  </figure>
+  <figure>
+    <p class="res res--pass">Round 2 · <code>result: PASS (exit 0)</code></p>
+    <img src="media/verify-pass.png" width="1462" height="498"
+         alt="Terminal output of refilm verify in round 2: 49 checks pass and 0 fail, and 11 checks are skipped with a written reason, ending with result: PASS (exit 0).">
+  </figure>
+</div>
+
+<p>
+  Not "looks different" but <em>ease-out&nbsp;→&nbsp;linear</em>,
+  <em>−700&nbsp;ms (limit ±80&nbsp;ms)</em>, <em>travel 14.1% (limit ≤10%)</em>. Round&nbsp;2
+  passes <span class="num">49</span> checks — and skips <span class="num">11</span> with a
+  reason, because a skip is not a pass.
+</p>
+
+<figure>
+  <img src="media/compare-report.png" width="1712" height="770"
+       alt="A refilm compare report: mean mismatch, the motion window on both sides, timing error per phase, a table of the worst frames and a per-frame activity chart drawn as horizontal bars for reference and clone.">
+  <figcaption>
+    <b>The activity chart is what makes easing debuggable.</b> Bar length is how much changed
+    since the previous frame; the same shape means the same easing and stagger. A clone that is
+    front-loaded against an even reference is using too strong an ease-out — and you can see it
+    before you look at a single frame. <a href="site/compare-report.html">How to read it</a>.
+  </figcaption>
+</figure>
+
+<h2>Go deeper</h2>
+
+<div class="cols">
+  <div>
+    <h3>Learn the loop</h3>
+    <ul>
+      <li><a href="site/getting-started.html">Getting started</a></li>
+      <li><a href="site/workflow.html">The workflow</a></li>
+      <li><a href="site/fidelity.html">Fidelity levels</a></li>
+      <li><a href="site/compare-report.html">Reading a compare report</a></li>
+    </ul>
+  </div>
+  <div>
+    <h3>Reference</h3>
+    <ul>
+      <li><a href="site/commands/index.html">Command reference</a></li>
+      <li><a href="site/commands/record.html">refilm record</a></li>
+      <li><a href="site/commands/verify.html">refilm verify</a></li>
+      <li><a href="site/canvas.html">Canvas and 3D</a></li>
+    </ul>
+  </div>
+  <div>
+    <h3>In production</h3>
+    <ul>
+      <li><a href="site/agents.html">Using it from an agent</a></li>
+      <li><a href="site/determinism.html">Determinism</a></li>
+      <li><a href="site/changelog.html">Changelog</a></li>
+      <li><a href="https://github.com/horizonbymuneeb/refilm">GitHub</a></li>
+    </ul>
+  </div>
+</div>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

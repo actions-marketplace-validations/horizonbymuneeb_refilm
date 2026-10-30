@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm gl — refilm</title>
+<meta name="description" content="Read a GPU trace — flags, output files, exit codes and a worked example.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html" aria-current="page">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>gl</h1>
+  <p class="lede" style="margin-bottom:0">Read or diff a GPU trace written by refilm record --gl.</p>
+  <div class="meta">
+    <span><b>Writes</b> files on disk</span>
+    <span><b>JSON</b> --json</span>
+    <span><b>Exit</b> 0 · 1 · 2</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+
+<pre class="cmd"><code>refilm gl summary  &lt;captureDir&gt;
+refilm gl channels &lt;captureDir&gt; [--grep RE] [--series KEY]
+refilm gl compare  --ref &lt;dir&gt; --clone &lt;dir&gt; [--grep RE] [--map "a=b,c=d"] [--timing 80] [--out report.md]</code></pre>
+
+<h2 id="flags">Flags</h2>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm gl --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">summary &lt;dir&gt;</span></td>
+        <td><span class="type">subcommand</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Canvases and renderer settings, three.js scene graph and mixers, shader programs with attribute layouts, draw order per frame, textures, and every animated channel.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">channels &lt;dir&gt;</span></td>
+        <td><span class="type">subcommand</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>List channels (kind, range, when they change), or print one channel as <code>[[t, value], …]</code> for fitting.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">compare --ref --clone</span></td>
+        <td><span class="type">subcommand</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Canvas attributes, renderer settings and draw structure side by side, then every animated channel.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--grep RE</span></td>
+        <td><span class="type">regex</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Filter channels by name.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--series KEY</span></td>
+        <td><span class="type">string</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Print one channel as a series.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--map "a=b,c=d"</span></td>
+        <td><span class="type">map</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Map reference channel names to the clone's when they differ.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--timing MS</span></td>
+        <td><span class="type">ms</span></td>
+        <td><span class="dflt">80</span></td>
+        <td>Allowed start/end difference per channel.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--out FILE</span></td>
+        <td><span class="type">path</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Write the comparison as markdown.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--json</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Machine-readable result on stdout.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="writes">What it writes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Paths are relative to the directory you pass on the command line.</caption>
+    <thead><tr><th>Writes</th><th>What is in it</th></tr></thead>
+    <tbody>
+      <tr><td>stdout / <code>--out</code></td><td>nothing is written into the capture; <code>--out</code> writes the compare markdown.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="exit">Exit codes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Exit codes. The full contract is on <a href="../agents.html">Using it from an agent</a>.</caption>
+    <thead><tr><th class="num">Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="num"><code>0</code></td><td>read successfully, or every channel passed</td></tr>
+      <tr><td class="num"><code>1</code></td><td><code>gl compare</code>: at least one channel failed</td></tr>
+      <tr><td class="num"><code>2</code></td><td>usage error — no GPU trace in that directory, or a bad subcommand</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="example">Example</h2>
+
+<pre class="cmd"><code>refilm gl summary .refilm/runs/hero/ref
+refilm gl channels .refilm/runs/hero/ref --grep emissive</code></pre>
+<pre class="out"><code># GPU trace: .refilm/runs/hero/ref
+
+renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device), SwiftShader driver) · 112 frames traced · 1 draw calls per frame
+
+## Canvases
+- c1 webgl on canvas#c: 480×360 px, css 480×360 at 0,0 (pixel ratio 1), antialias true, alpha true
+
+## Programs (shaders in gl/shaders/)
+- **p1**: 1/frame, TRIANGLE_STRIP up to 4 verts, no-blend (gl/shaders/p1.vert, gl/shaders/p1.frag)
+  - animated: uHover
+  - fixed: uTint=[0.35,0.55,1]
+
+## Animated channels (1)
+- p1.uHover: there-and-back, 0.000037791 → 0.99989, changes -650–1183 ms</code></pre>
+
+<h2 id="notes">Notes</h2>
+
+<h3>Channel kinds are the useful part</h3>
+<p><code>clock</code>, <code>transition</code>, <code>there-and-back</code>, <code>oscillation</code>, <code>steps</code>. Each tells you how to implement it, not just that it moves. <a href="../canvas.html">The full table</a>.</p>
+
+<h3>Fixed uniforms are art direction</h3>
+<p><code>gl summary</code> separates constant uniforms from animated channels. Copy the constants exactly — one wrong constant changes the whole look.</p>
+
+<h3><code>gl compare</code> exits 1</h3>
+<p>Same gate contract as <code>verify</code>: same kind, start and end within <code>--timing</code> ms, mean value error ≤ 5% of the reference's range.</p>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="record.html"><code>refilm record</code></a> — produce the trace with --gl</li>
+  <li><a href="../canvas.html">canvas</a> — the canvas story</li>
+</ul>
+
+    <nav class="pager" aria-label="Command pages">
+      <a href="fit.html"><span class="k">Previous</span>refilm fit</a>
+      <a class="next" href="verify.html"><span class="k">Next</span>refilm verify</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The workflow — refilm</title>
+<meta name="description" content="The loop in depth: scope, record, spec, build, verify, fix — with the fidelity levels and the real pass criteria.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../site/style.css">
+<script src="../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../index.html">Overview</a></li>
+            <li><a href="../site/getting-started.html">Getting started</a></li>
+            <li><a href="../site/workflow.html" aria-current="page">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../site/determinism.html">Determinism</a></li>
+            <li><a href="../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<span class="eyebrow">The loop in depth</span>
+<h1>The workflow</h1>
+<p class="lede">
+  Six steps, one direction, and a number at every gate. The loop is not a suggestion: it is what
+  makes "close enough" impossible to say and impossible to accept.
+</p>
+
+<ol class="loop">
+  <li><span class="loop__n">01</span><span class="loop__t">Scope</span><span class="loop__d">One section, one time range, one fidelity level, written down.</span></li>
+  <li><span class="loop__n">02</span><span class="loop__t">Record</span><span class="loop__d">Film the reference exactly as you will film the clone.</span></li>
+  <li><span class="loop__n">03</span><span class="loop__t">Spec</span><span class="loop__d">Rows you can check, and unresolved rows you must resolve.</span></li>
+  <li><span class="loop__n">04</span><span class="loop__t">Build</span><span class="loop__d">Implement against the spec in the project's own stack.</span></li>
+  <li><span class="loop__n">05</span><span class="loop__t">Verify</span><span class="loop__d">Every row measured against the pass criteria. Exit 1 on failure.</span></li>
+  <li><span class="loop__n">06</span><span class="loop__t">Fix</span><span class="loop__d">Change one thing the report named, then re-record.</span></li>
+</ol>
+
+<h2 id="scope">1 · Scope</h2>
+
+<p>
+  Narrow the target to what was actually asked for: one section, one widget, one time range of a
+  video. Clone the rest of the page and you will spend rounds on motion nobody asked about.
+</p>
+
+<p>Write it down before capturing, in <code>.refilm/runs/&lt;name&gt;/scope.md</code>:</p>
+
+<ul>
+  <li><strong>target</strong> — the selector or the video time range, and nothing else</li>
+  <li><strong>destination</strong> — path and stack; read the project's <code>package.json</code> and existing components first, and reuse the animation library already in the project</li>
+  <li><strong>fidelity</strong> — <code>motion</code>, <code>pixel</code> or <code>mixed</code>, and why</li>
+  <li><strong>additions</strong> — for <code>mixed</code>, exactly what is being added on top</li>
+</ul>
+
+<p>
+  The fidelity level is decided here, from the words the person used, because it changes what
+  <code>verify</code> treats as a failure. <a href="fidelity.html">The full comparison</a>.
+</p>
+
+<h2 id="record">2 · Record</h2>
+
+<p>
+  The capture decides whether every later number means anything. Two rules above all: the
+  reference and the clone are recorded with the <em>same</em> viewport, crop, trigger, duration,
+  fps and clock — and what you record is exactly what was pointed at, not the page around it.
+</p>
+
+<pre class="cmd"><code>refilm record --url &lt;url|file.html&gt; --out .refilm/runs/&lt;name&gt;/ref \
+  --selector "&lt;section&gt;" --trigger load|scroll|hover|click|move|drag|none \
+  --duration 2000 --track "&lt;moving elements&gt;"</code></pre>
+
+<p>
+  <code>--trigger</code> is where most failed runs go wrong. Pick it from how the motion starts,
+  not from what the page is:
+</p>
+
+<div class="tw">
+  <table>
+    <caption>Trigger choice. Full flag list on <a href="commands/record.html"><code>refilm record</code></a>.</caption>
+    <thead>
+      <tr><th>Motion looks like</th><th><code>--trigger</code></th><th>Extra flags</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>plays when the page loads</td><td><code>load</code></td><td>—</td></tr>
+      <tr><td>appears when scrolled into view</td><td><code>scroll</code></td><td><code>--scroll-ms</code>, <code>--scroll-steps</code>, <code>--scroll-to</code></td></tr>
+      <tr><td>reacts to the pointer over an element</td><td><code>hover</code></td><td><code>--hover-at</code>, <code>--target</code></td></tr>
+      <tr><td>plays when the pointer leaves</td><td><code>leave</code></td><td><code>--pre-hover</code>, <code>--pre-hover-ms</code></td></tr>
+      <tr><td>follows the pointer across an element</td><td><code>move</code></td><td><code>--path</code>, <code>--path-ms</code></td></tr>
+      <tr><td>drag interaction</td><td><code>drag</code></td><td><code>--path</code>, <code>--path-ms</code></td></tr>
+      <tr><td>plays on click</td><td><code>click</code></td><td><code>--target</code></td></tr>
+      <tr><td>a loop that never stops</td><td><code>none</code></td><td><code>--duration</code> long enough for two periods</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Then <strong>look at the frames</strong> before writing code:</p>
+
+<pre class="cmd"><code>refilm sheet filmstrip --frames .refilm/runs/&lt;name&gt;/ref/frames \
+  --out .refilm/runs/&lt;name&gt;/ref/sheets</code></pre>
+
+<h2 id="spec">3 · Spec</h2>
+
+<p>
+  One row per element per property: start, duration, from → to, easing, stagger. Each row carries
+  a <code>source</code> and a <code>confidence</code>, because where a number came from matters as
+  much as the number.
+</p>
+
+<div class="tw">
+  <table>
+    <caption>Evidence order of preference. <code>spec</code> never fills a row with a guess.</caption>
+    <thead>
+      <tr><th>Source</th><th>What it reads</th><th>Precision</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>declared</code></td><td>CSS and WAAPI animations in <code>inspect.json</code>: exact delay, duration, easing, per-keyframe offsets</td><td>exact — copy it, do not re-measure</td></tr>
+      <tr><td><code>track</code></td><td>per-frame element samples in <code>track.json</code>, fitted by <code>refilm fit</code></td><td>high; works for JS-driven motion too</td></tr>
+      <tr><td><code>gl-track</code></td><td>animated uniforms and scene-graph values from a GPU trace</td><td>high, for canvas work</td></tr>
+      <tr><td><code>frames</code></td><td>pixels only, for video and gif references</td><td>low — the row is marked as such</td></tr>
+      <tr><td><code>unknown</code></td><td>nothing could measure it</td><td>listed under <code>unresolved</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+  The spec is the contract. Every row becomes a check in step 5, so a row that is wrong is not a
+  typo — it is a future failed round.
+</p>
+
+<h2 id="build">4 · Build</h2>
+
+<p>
+  Implement in the project's stack. Adding GSAP to a project that animates with CSS, or Framer
+  Motion to a Vue app, is a change nobody asked for. When nothing exists yet the preference order
+  is: CSS keyframes and transitions → Web Animations API → the framework's own motion library →
+  GSAP for long timelines.
+</p>
+
+<p>
+  Keep the DOM structure close to the reference's role structure, so the selectors you tracked
+  have equivalents in the clone. And give the clone a way to be filmed identically — a route or a
+  static page at the reference viewport with the same trigger.
+</p>
+
+<h2 id="verify">5 · Verify</h2>
+
+<p>Three commands per round. Keep every round's directory; the progression is part of the report.</p>
+
+<pre class="cmd"><code>refilm record  --url &lt;clone&gt; --out .refilm/runs/&lt;name&gt;/clone-1 \
+  --selector "&lt;same&gt;" --trigger &lt;same&gt; --duration &lt;same&gt; --track "&lt;same&gt;"
+refilm compare --ref .refilm/runs/&lt;name&gt;/ref/frames \
+  --clone .refilm/runs/&lt;name&gt;/clone-1/frames --out .refilm/runs/&lt;name&gt;/compare-1
+refilm sheet compare --ref …/ref/frames --clone …/clone-1/frames --diff …/compare-1/diff --out …/compare-1/sheets
+refilm verify  --spec .refilm/runs/&lt;name&gt;/spec.json \
+  --ref .refilm/runs/&lt;name&gt;/ref --clone .refilm/runs/&lt;name&gt;/clone-1 --out .refilm/runs/&lt;name&gt;/verify-1</code></pre>
+
+<h3>The pass criteria, with their real numbers</h3>
+
+<p>
+  These are not defaults you can lower when a run is inconvenient. They are the thresholds the
+  gate applies, and <code>verify</code> prints each one next to the measurement it failed.
+</p>
+
+<div class="tw">
+  <table>
+    <caption>Limits applied per fidelity level. Every failed check prints measured value and limit.</caption>
+    <thead>
+      <tr><th>Check</th><th class="num">Limit</th><th>Level</th><th>Measured how</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>start / end / duration of a row</td><td class="num">±80 ms</td><td>motion, pixel</td><td>first and last frame where the property changes, from the track</td></tr>
+      <tr><td>easing family</td><td>equal family, or curve within <span class="num">5%</span> of travel</td><td>motion, pixel</td><td>best-fit named easing on both tracks, then curve distance</td></tr>
+      <tr><td>stagger gaps</td><td class="num">±40 ms</td><td>motion, pixel</td><td>difference between consecutive sibling start times</td></tr>
+      <tr><td>travel distance</td><td class="num">≤10%</td><td>motion, pixel</td><td>relative to the element's own size, same direction</td></tr>
+      <tr><td>nothing extra moves</td><td class="num">0</td><td>motion, pixel</td><td>a property animating in the clone that is still in the reference</td></tr>
+      <tr><td>mean pixel mismatch</td><td class="num">≤2%</td><td>pixel</td><td>fraction of differing pixels per frame, averaged</td></tr>
+      <tr><td>worst single frame</td><td class="num">≤5%</td><td>pixel</td><td>the highest per-frame mismatch in the run</td></tr>
+      <tr><td>rest frames</td><td class="num">≤0.5%</td><td>pixel</td><td>frames outside the motion window</td></tr>
+      <tr><td>fonts</td><td>identical</td><td>pixel</td><td><code>inspect.json › fonts</code> on both captures</td></tr>
+      <tr><td>cloned region</td><td>one of the above</td><td>mixed</td><td>with <code>--region x,y,w,h</code>; additions are not compared</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout">
+  <span class="callout__label">A skip is not a pass</span>
+  <p>
+    When a check cannot be measured, <code>verify</code> reports <code>skip</code> with the reason
+    — <em>"the clone's track has 1 start time(s) for 3 siblings: track every sibling to measure the
+    stagger"</em>. It never reports a check it could not measure as green. A green run that skipped
+    its checks is worse than a red one, because it is a lie with a number attached.
+  </p>
+</div>
+
+<h3>The fidelity levels</h3>
+
+<p>
+  The level decides what gets checked. Pick it before the first capture; changing it later means
+  re-recording.
+</p>
+
+<div class="tw">
+  <table>
+    <caption>Fidelity comparison. Full detail on <a href="fidelity.html">Fidelity levels</a>.</caption>
+    <thead>
+      <tr><th>&nbsp;</th><th><code>motion</code></th><th><code>pixel</code></th><th><code>mixed</code></th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>You would say</strong></td>
+        <td>"clone this animation", "make ours feel like theirs"</td>
+        <td>"match it exactly", "1:1", "pixel-perfect"</td>
+        <td>"clone X and add Y"</td>
+      </tr>
+      <tr>
+        <td><strong>Timing</strong></td>
+        <td>±80 ms</td>
+        <td>±80 ms</td>
+        <td>one of these, for the cloned region</td>
+      </tr>
+      <tr>
+        <td><strong>Easing</strong></td>
+        <td>same family, or within 5% of travel</td>
+        <td>same family, or within 5% of travel</td>
+        <td>same as the chosen level</td>
+      </tr>
+      <tr>
+        <td><strong>Pixels</strong></td>
+        <td>a trend, not a verdict</td>
+        <td>mean ≤2%, worst frame ≤5%, rest ≤0.5%</td>
+        <td>cloned region only</td>
+      </tr>
+      <tr>
+        <td><strong>Fonts, colours, sizes</strong></td>
+        <td>yours to choose</td>
+        <td>must match</td>
+        <td>yours outside the cloned region</td>
+      </tr>
+      <tr>
+        <td><strong>Additions</strong></td>
+        <td>not applicable</td>
+        <td>not applicable</td>
+        <td>described and shown; verified only for not disturbing the cloned motion</td>
+      </tr>
+      <tr>
+        <td><strong>Fails for</strong></td>
+        <td>motion only</td>
+        <td>also a fallback font or a 2 px padding difference</td>
+        <td>either, inside the region</td>
+      </tr>
+      <tr>
+        <td><strong>Default</strong></td>
+        <td><span class="st st--pass">default</span></td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+  <code>pixel</code> fails for reasons that have nothing to do with motion, so fix layout and fonts
+  <em>before</em> chasing timing. And keep the level honest: a <code>pixel</code> run that is really
+  a <code>motion</code> run with a loosened threshold is a report that lies.
+</p>
+
+<h2 id="fix">6 · Fix</h2>
+
+<p>
+  Read the report in a fixed order, then change the smallest thing the evidence points at. Each
+  round should be one cause, not five guesses.
+</p>
+
+<div class="tw">
+  <table>
+    <caption>The failure table. Full version with fixes in <a href="compare-report.html">Reading a compare report</a>.</caption>
+    <thead>
+      <tr><th>Symptom</th><th>Usual cause</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>everything shifted by the same offset</td><td>trigger latency or a missing initial delay</td><td>adjust the delay; check <code>--wait-before</code></td></tr>
+      <tr><td>clone shorter and front-loaded</td><td>easing too aggressive, or duration taken from the visible window</td><td>use the fitted <code>durationMs</code>; set the declared duration</td></tr>
+      <tr><td>clone ends on time but starts late</td><td>delay too long, duration too short</td><td>fix both together</td></tr>
+      <tr><td>bars even in the clone, spiky in the reference</td><td>linear where the reference is ease-out</td><td>change the easing family</td></tr>
+      <tr><td>mismatch high on rest frames</td><td>layout, font fallback, different crop</td><td>fix the crop; for pixel work load the font</td></tr>
+      <tr><td>reference overshoots, clone does not</td><td>spring vs bezier</td><td>use a spring — <code>type:"spring"</code>, <code>back.out</code>, or a sampled <code>linear()</code></td></tr>
+      <tr><td>stagger gaps differ</td><td>per-item delay math</td><td><code>delay = base + index × step</code>; check where the index comes from</td></tr>
+      <tr><td>activity where the reference is still</td><td>a stray transition, or the pointer triggered a hover</td><td>remove it, or move the pointer out</td></tr>
+      <tr><td>only the last frames differ</td><td>fill mode or end state</td><td><code>animation-fill-mode: forwards</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>When to stop</h3>
+
+<ul>
+  <li>When every spec row passes and the latest sheets show the same state at the same timestamp — and you can say that with numbers.</li>
+  <li>After <strong>5 rounds</strong> with no progress on a row, or when the remaining difference is outside your control: a font licence, a shader you may not copy, a third-party embed, physics you approximated. Report the row, its last numbers and the reason.</li>
+  <li>Never by relaxing a threshold. If a looser bar is genuinely right, say which one and why, and let the person decide.</li>
+</ul>
+
+<div class="callout">
+  <span class="callout__label">Rules that save rounds</span>
+  <p><strong>Same capture settings on both sides.</strong> A different viewport, crop, fps, trigger or clock means you are measuring your setup. <code>compare</code> warns about it — treat the warning as a failure.</p>
+  <p><strong>Read the middle frames.</strong> Easing lives between the first and last frame; two frames tell you nothing.</p>
+  <p><strong>Scroll motion is a function of scroll position, not time.</strong> Capture both sides with the same <code>--scroll-steps</code> and <code>--scroll-ms</code>.</p>
+  <p><strong>Canvas on the real clock drops frames.</strong> Capture both sides with <code>--clock virtual</code> and the same <code>--seed</code>.</p>
+</div>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

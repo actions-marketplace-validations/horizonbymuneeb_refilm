@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm install — refilm</title>
+<meta name="description" content="Install the agent skill — flags, output files, exit codes and a worked example.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html" aria-current="page">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>install</h1>
+  <p class="lede" style="margin-bottom:0">Install the bundled agent skill into an agent's skill directory.</p>
+  <div class="meta">
+    <span><b>Writes</b> files on disk</span>
+    <span><b>JSON</b> --json</span>
+    <span><b>Exit</b> 0 · 2</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+
+<pre class="cmd"><code>refilm install --agent claude|codex|dsh|all [--dry-run] [--force]</code></pre>
+
+<h2 id="flags">Flags</h2>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm install --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--agent &lt;t&gt;</span></td>
+        <td><span class="type">claude|codex|dsh|all</span></td>
+        <td><span class="dflt">required</span></td>
+        <td>Target agent. <code>claude</code> → <code>~/.claude/skills/refilm/</code>; <code>codex</code> → <code>~/.codex/skills/refilm/</code>; <code>dsh</code> → <code>$DSH_HOME/skills/refilm/</code> (falling back to <code>~/.dsh-home/skills/refilm/</code>); <code>all</code> → every target whose parent directory exists.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--dry-run</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Print what would be copied and where. Change nothing.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--force</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Overwrite an existing install. Default is never to overwrite.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="writes">What it writes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Paths are relative to the directory you pass on the command line.</caption>
+    <thead><tr><th>Writes</th><th>What is in it</th></tr></thead>
+    <tbody>
+      <tr><td><code>&lt;skill dir&gt;/refilm/</code></td><td><code>SKILL.md</code> and <code>references/</code>, copied from the package's own <code>skill/</code>. Nothing is downloaded and nothing outside the three skill directories is touched.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="exit">Exit codes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Exit codes. The full contract is on <a href="../agents.html">Using it from an agent</a>.</caption>
+    <thead><tr><th class="num">Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="num"><code>0</code></td><td>always — install reports, it does not gate. A skipped target still exits 0.</td></tr>
+      <tr><td class="num"><code>2</code></td><td>usage error — unknown agent name</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="example">Example</h2>
+
+<pre class="cmd"><code>refilm install --agent all --dry-run</code></pre>
+<pre class="out"><code>install (dry run) — source /usr/lib/node_modules/refilm/skill
+
+  skip  claude /home/you/.claude/skills/refilm
+        /home/you/.claude/skills does not exist, so claude is not installed on this machine
+  skip  codex  /home/you/.codex/skills/refilm
+        /home/you/.codex/skills does not exist, so codex is not installed on this machine
+  keep  dsh    /home/you/.dsh-home/skills/refilm
+        already installed — pass --force to overwrite
+
+would install into 0 target(s); 1 already installed, 2 skipped. Nothing was changed.</code></pre>
+
+<h2 id="notes">Notes</h2>
+
+<h3>The skill is a thin wrapper</h3>
+<p>It tells the agent when to reach for refilm and how to read the numbers; all the measurement lives in the CLI. Any agent that can run a shell command can use refilm without the skill.</p>
+
+<h3>Use <code>--dry-run</code> first</h3>
+<p>It prints the resolved target paths, which is the fastest way to find out which agents exist on the machine.</p>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="../agents.html">agents</a> — using refilm from an agent</li>
+</ul>
+
+    <nav class="pager" aria-label="Command pages">
+      <a href="report.html"><span class="k">Previous</span>refilm report</a>
+      <a class="next" href="init.html"><span class="k">Next</span>refilm init</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

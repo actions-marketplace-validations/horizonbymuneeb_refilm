@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm record — refilm</title>
+<meta name="description" content="Film a page — flags, output files, exit codes and a worked example.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html" aria-current="page">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>record</h1>
+  <p class="lede" style="margin-bottom:0">Film a page and dump everything needed to rebuild its motion.</p>
+  <div class="meta">
+    <span><b>Writes</b> files on disk</span>
+    <span><b>JSON</b> --json</span>
+    <span><b>Exit</b> 0 · 2 · 3 · 4</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+
+<pre class="cmd"><code>refilm record --url &lt;url|file.html&gt; --out &lt;dir&gt; [options]</code></pre>
+
+<h3>Window</h3>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm record --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--viewport WxH</span></td>
+        <td><span class="type">WxH</span></td>
+        <td><span class="dflt">1440x900</span></td>
+        <td>Viewport to film at. Use the same value for the reference and the clone.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--scale N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">1</span></td>
+        <td>Device scale factor (<code>deviceScaleFactor</code>).</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--color-scheme S</span></td>
+        <td><span class="type">light|dark</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Force the page's colour scheme.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--reduced-motion S</span></td>
+        <td><span class="type">no-preference|reduce</span></td>
+        <td><span class="dflt">no-preference</span></td>
+        <td>Emulate <code>prefers-reduced-motion</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>What to look at</h3>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm record --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--selector CSS</span></td>
+        <td><span class="type">css</span></td>
+        <td><span class="dflt">whole viewport</span></td>
+        <td>Element to scroll into view and crop frames to.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--pad PX</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">0</span></td>
+        <td>Extra margin around the selector crop.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--clip x,y,w,h</span></td>
+        <td><span class="type">numbers</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Explicit crop in CSS px. Overrides the <code>--selector</code> crop.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>How to start the motion</h3>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm record --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--trigger T</span></td>
+        <td><span class="type">load|scroll|hover|leave|move|drag|click|none</span></td>
+        <td><span class="dflt">load</span></td>
+        <td>What starts the motion. <code>load</code> films from navigation; <code>scroll</code> wheels the page in steps; <code>hover</code>, <code>click</code> and <code>move</code> act on <code>--target</code>; <code>leave</code> is hover-out; <code>drag</code> is <code>move</code> with the button held; <code>none</code> just records loops.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--target CSS</span></td>
+        <td><span class="type">css</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Element to hover, click or move over.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--hover-at FX,FY</span></td>
+        <td><span class="type">fractions</span></td>
+        <td><span class="dflt">0.5,0.5</span></td>
+        <td>Where to put the pointer on <code>--target</code>, as fractions of its box.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--pre-hover CSS</span></td>
+        <td><span class="type">css</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Hover this element before the trigger, and wait <code>--pre-hover-ms</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--pre-hover-ms MS</span></td>
+        <td><span class="type">ms</span></td>
+        <td><span class="dflt">1500</span></td>
+        <td>Wait after <code>--pre-hover</code> before triggering.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--leave-to X,Y</span></td>
+        <td><span class="type">px</span></td>
+        <td><span class="dflt">&lt;width/2&gt;,8</span></td>
+        <td>Viewport point the pointer moves to for <code>--trigger leave</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--path "FX,FY;…"</span></td>
+        <td><span class="type">fractions</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>For <code>move</code>/<code>drag</code>: fractional points inside <code>--target</code>, visited in order.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--path-ms MS</span></td>
+        <td><span class="type">ms</span></td>
+        <td><span class="dflt">400</span></td>
+        <td>Time spent between two points on the path.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--scroll-to PX|CSS</span></td>
+        <td><span class="type">px|css</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>Scroll position (or element) to reach during a scroll trigger.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--scroll-ms MS</span></td>
+        <td><span class="type">ms</span></td>
+        <td><span class="dflt">600</span></td>
+        <td>How long the stepped scroll takes.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--scroll-steps N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">12</span></td>
+        <td>Number of wheel steps.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--wait-before MS</span></td>
+        <td><span class="type">ms</span></td>
+        <td><span class="dflt">800</span></td>
+        <td>Settle time after load before the trigger fires.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--pre-js FILE|CODE</span></td>
+        <td><span class="type">path|js</span></td>
+        <td><span class="dflt">—</span></td>
+        <td>JS to run after load and before the trigger — dismiss a banner, open a menu, set a scroll position.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--duration MS</span></td>
+        <td><span class="type">ms</span></td>
+        <td><span class="dflt">3000</span></td>
+        <td>How long to record after the trigger.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--pre-roll MS</span></td>
+        <td><span class="type">ms</span></td>
+        <td><span class="dflt">200</span></td>
+        <td>Frames to keep before the trigger.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Output</h3>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm record --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--fps N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">25</span></td>
+        <td>Extracted frame rate.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--playback-rate R</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">1</span></td>
+        <td>Slow CSS/WAAPI animations with CDP (<code>0.25</code> = 4× slower). JS-driven motion is unaffected.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--track "CSS, CSS"</span></td>
+        <td><span class="type">css list</span></td>
+        <td><span class="dflt"><code>--selector</code>, if any</span></td>
+        <td>Elements sampled every animation frame into <code>track.json</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--no-video</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Skip the video and frames; keep inspection and track only.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--headed</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Show the browser. Needs a display.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--json</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Machine-readable summary on stdout.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Canvas, WebGL and 3D</h3>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm record --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--clock real|virtual</span></td>
+        <td><span class="type">enum</span></td>
+        <td><span class="dflt">real</span></td>
+        <td><code>real</code> records the page and cuts frames out of the video. <code>virtual</code> runs the page on a clock the capturer advances by hand, so frame <em>k</em> is exactly <em>t = k/fps</em> and two captures are identical.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--seed N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">1 (virtual)</span></td>
+        <td>Seed <code>Math.random</code>. Same seed, same particles.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--raf-hz N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">60</span></td>
+        <td>Virtual-clock frame rate seen by the page.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--network-wait MS</span></td>
+        <td><span class="type">ms</span></td>
+        <td><span class="dflt">3000</span></td>
+        <td>Virtual clock: wait up to MS for in-flight work before each frame.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--gl</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Trace WebGL/WebGL2/WebGPU/canvas 2D and three.js, Pixi, PlayCanvas, Babylon, OGL: shaders, programs, draw calls, textures, buffers, uniforms and the scene graph, per frame.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--gl-buffers MB</span></td>
+        <td><span class="type">MB</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>With <code>--gl</code>, also dump vertex/index buffer contents (first upload) up to MB.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--gpu software|hardware</span></td>
+        <td><span class="type">enum</span></td>
+        <td><span class="dflt">software</span></td>
+        <td><code>software</code> is SwiftShader — slower, identical pixels everywhere. <code>hardware</code> uses the real GPU and enables WebGPU. Film both sides with the same mode.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--assets</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Save the page's 3D models, textures, shader files, Lottie/Rive files and scripts into <code>assets/</code> + <code>assets.json</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="writes">What it writes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Paths are relative to the directory you pass on the command line.</caption>
+    <thead><tr><th>Writes</th><th>What is in it</th></tr></thead>
+    <tbody>
+      <tr><td><code>video.webm</code> / <code>video.mp4</code></td><td><code>video.mp4</code> under <code>--clock virtual</code>.</td></tr>
+      <tr><td><code>frames/NNNN.png</code>, <code>frames.json</code></td><td>numbered frames and their time base.</td></tr>
+      <tr><td><code>inspect.json</code></td><td>declared CSS/WAAPI animations with exact timing, computed styles, fonts, detected libraries.</td></tr>
+      <tr><td><code>track.json</code></td><td>per-frame position, size, opacity and transform of every <code>--track</code> selector.</td></tr>
+      <tr><td><code>capture.json</code></td><td>the settings that produced the run. <code>compare</code> reads both sides and warns when they disagree.</td></tr>
+      <tr><td><code>gl/gl.json</code>, <code>gl/draws.json</code>, <code>gl/shaders/</code>, <code>gl/summary.md</code>, <code>gl-track.json</code>, <code>three/</code></td><td>only with <code>--gl</code>.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="exit">Exit codes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Exit codes. The full contract is on <a href="../agents.html">Using it from an agent</a>.</caption>
+    <thead><tr><th class="num">Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="num"><code>0</code></td><td>the capture was written</td></tr>
+      <tr><td class="num"><code>2</code></td><td>usage error — missing <code>--url</code> or <code>--out</code>, bad flag value</td></tr>
+      <tr><td class="num"><code>3</code></td><td>environment problem — ffmpeg or Chromium unavailable</td></tr>
+      <tr><td class="num"><code>4</code></td><td>internal error — the browser died or a write failed</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="example">Example</h2>
+
+<pre class="cmd"><code>refilm record --url https://example.com --out .refilm/runs/hero/ref \
+  --selector ".hero" --trigger load --duration 1800 \
+  --track ".eyebrow, h1, .sub, .card"</code></pre>
+<pre class="out"><code>[launch] chromium (software gl, 1440x900 @1x)
+[load] https://example.com
+[inspect] animations, keyframes, styles, fonts, libraries
+[frames] cutting frames out of video.webm
+[write] capture.json
+capture     .refilm/runs/hero/ref
+viewport    1440x900 @1x · 25 fps · real clock
+frames      50 · cropped 1080x409 at 180,245
+trigger     load · trigger frame 5 · 1800 ms
+motion      9 animations · 3 keyframes · 0 canvases · 33 nodes
+track       62 samples of .eyebrow, h1, .sub, .card</code></pre>
+
+<h2 id="notes">Notes</h2>
+
+<h3><code>--track</code> is the highest-value flag</h3>
+<p>It is the only thing that produces a numeric curve per element, which is what <code>fit</code> and <code>verify</code> need. Track the elements you will animate, plus any parent that moves.</p>
+
+<h3>Same settings on both sides</h3>
+<p>A different viewport, crop, fps, trigger or clock means you are measuring your setup, not the clone. Re-run with only <code>--url</code> and <code>--out</code> changed.</p>
+
+<h3>Virtual clock for canvas</h3>
+<p>Software GL drops frames on the real clock, and the drop is machine-dependent. <code>--clock virtual</code> makes frame <em>k</em> exactly <em>t = k/fps</em>. See <a href="../determinism.html">Determinism</a>.</p>
+
+<h3>Long durations drop frames</h3>
+<p>Keep reference and clone short (≤ 3 s) and identical in length on a software-GL box.</p>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="sheet.html"><code>refilm sheet</code></a> — look at the frames</li>
+  <li><a href="spec.html"><code>refilm spec</code></a> — turn the capture into rows</li>
+  <li><a href="gl.html"><code>refilm gl</code></a> — read the GPU trace</li>
+</ul>
+
+    <nav class="pager" aria-label="Command pages">
+      <a href="index.html"><span class="k">Up</span>Command reference</a>
+      <a class="next" href="frames.html"><span class="k">Next</span>refilm frames</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

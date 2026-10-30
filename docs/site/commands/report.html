@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm report — refilm</title>
+<meta name="description" content="One HTML report — flags, output files, exit codes and a worked example.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html" aria-current="page">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>report</h1>
+  <p class="lede" style="margin-bottom:0">One self-contained HTML report for a clone run.</p>
+  <div class="meta">
+    <span><b>Writes</b> files on disk</span>
+    <span><b>JSON</b> --json</span>
+    <span><b>Exit</b> 0 · 1 · 2</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+
+<pre class="cmd"><code>refilm report --dir &lt;runDir&gt; [--out &lt;file.html&gt;] [--title &lt;text&gt;] [--max-images N] [--check] [--json]</code></pre>
+
+<h2 id="flags">Flags</h2>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm report --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--dir DIR</span></td>
+        <td><span class="type">dir</span></td>
+        <td><span class="dflt">required</span></td>
+        <td>The run directory holding <code>spec.json</code>, <code>clone-*/</code> and <code>compare-*/</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--out FILE</span></td>
+        <td><span class="type">path</span></td>
+        <td><span class="dflt">&lt;runDir&gt;/report.html</span></td>
+        <td>Output path.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--title TEXT</span></td>
+        <td><span class="type">string</span></td>
+        <td><span class="dflt">run dir name</span></td>
+        <td>Report heading.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--max-images N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">12</span></td>
+        <td>Cap on embedded sheet images, to keep the file openable.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--check</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Verify the written file makes no external requests; exit 1 if it does.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--json</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Machine-readable result.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="writes">What it writes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Paths are relative to the directory you pass on the command line.</caption>
+    <thead><tr><th>Writes</th><th>What is in it</th></tr></thead>
+    <tbody>
+      <tr><td><code>report.html</code></td><td>one file, images inlined as <code>data:</code> URIs. Zero external references.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="exit">Exit codes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Exit codes. The full contract is on <a href="../agents.html">Using it from an agent</a>.</caption>
+    <thead><tr><th class="num">Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="num"><code>0</code></td><td>the report was written (and passed <code>--check</code> if given)</td></tr>
+      <tr><td class="num"><code>1</code></td><td><code>--check</code> found a non-<code>data:</code> <code>src</code>/<code>href</code> in the file on disk</td></tr>
+      <tr><td class="num"><code>2</code></td><td>usage error — <code>--dir</code> is not a directory</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="example">Example</h2>
+
+<pre class="cmd"><code>refilm report --dir .refilm/runs/hero --out .refilm/runs/hero/report.html</code></pre>
+<pre class="out"><code>wrote .refilm/runs/hero/report.html (61.8 KB, 2 round(s), 18 spec row(s))
+external references: 0 — opens offline</code></pre>
+
+<h2 id="notes">Notes</h2>
+
+<h3>Every round, not just the winner</h3>
+<p>A report that quietly omits a failed round is worse than no report. Every round found in the directory is listed, newest last.</p>
+
+<h3><code>--check</code> re-reads from disk</h3>
+<p>It leaves the file alone, re-reads it and exits 1 when any non-<code>data:</code> <code>src</code>/<code>href</code> is present — so it can gate a report that already exists.</p>
+
+<h3>Offline by design</h3>
+<p>It opens on a plane, in a sandbox, and inside a CI artifact viewer with no network.</p>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="verify.html"><code>refilm verify</code></a> — produce the checks</li>
+  <li><a href="sheet.html"><code>refilm sheet</code></a> — produce the images</li>
+</ul>
+
+    <nav class="pager" aria-label="Command pages">
+      <a href="verify.html"><span class="k">Previous</span>refilm verify</a>
+      <a class="next" href="install.html"><span class="k">Next</span>refilm install</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

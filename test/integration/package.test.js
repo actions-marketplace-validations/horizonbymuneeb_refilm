@@ -59,10 +59,33 @@ test("package: the skill ships with its reference files", () => {
 
 test("package: every file the README points at is shipped", () => {
   const readme = readFileSync(join(ROOT, "README.md"), "utf8");
-  const refs = [...readme.matchAll(/(?:src|href)="((?:docs|demo)\/[^"]+)"/g)].map((m) => m[1]);
-  assert.ok(refs.length > 0, "the README should show real media; none was referenced");
-  for (const rel of refs) {
-    assert.ok(existsSync(join(ROOT, rel)), `README references ${rel}, which is not in the repository`);
+
+  // Images use ABSOLUTE raw.githubusercontent URLs, because npm renders the README at
+  // npmjs.com/package/refilm where a relative "docs/media/x.png" resolves to a 403. An absolute
+  // URL can still rot (a renamed file, a moved folder), so each one is mapped back to a repo
+  // path and checked on disk.
+  const RAW = "https://raw.githubusercontent.com/horizonbymuneeb/refilm/main/";
+  const rawRefs = [...readme.matchAll(new RegExp(`src="${RAW.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^"]+)"`, "g"))].map(
+    (m) => m[1],
+  );
+  assert.ok(rawRefs.length > 0, "the README should show real media; none was referenced");
+  for (const rel of rawRefs) {
+    assert.ok(existsSync(join(ROOT, rel)), `README references ${rel} on GitHub, which is not in the repository`);
+  }
+
+  // A relative image path would silently break on npm, so none may exist.
+  const relativeImages = [...readme.matchAll(/src="((?!#|https?:|data:)[^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(
+    relativeImages,
+    [],
+    `README images must use absolute raw URLs (npm renders the README on npmjs.com): ${relativeImages.join(", ")}`,
+  );
+
+  // Repo-relative links (docs, demo, LICENSE, ...) must resolve too.
+  for (const m of readme.matchAll(/\]\(((?!https?:|#|mailto:)[^)]+)\)/g)) {
+    const rel = m[1].split("#")[0];
+    if (!rel) continue;
+    assert.ok(existsSync(join(ROOT, rel)), `README links to ${rel}, which is not in the repository`);
   }
 });
 

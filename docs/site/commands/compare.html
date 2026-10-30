@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm compare — refilm</title>
+<meta name="description" content="Diff two frame sets — flags, output files, exit codes and a worked example.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.2</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html" aria-current="page">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html">refilm doctor</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>compare</h1>
+  <p class="lede" style="margin-bottom:0">Diff a clone's frames against the reference's, frame by frame.</p>
+  <div class="meta">
+    <span><b>Writes</b> files on disk</span>
+    <span><b>JSON</b> --json</span>
+    <span><b>Exit</b> 0 · 1 · 2</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+
+<pre class="cmd"><code>refilm compare --ref &lt;framesDir&gt; --clone &lt;framesDir&gt; --out &lt;dir&gt; [options]</code></pre>
+
+<h2 id="flags">Flags</h2>
+
+<div class="tw">
+  <table>
+    <caption>From <code>refilm compare --help</code>.</caption>
+    <thead>
+      <tr><th>Flag</th><th>Type</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag">--auto-align</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">on</span></td>
+        <td>Find the clone offset within ±<code>--max-shift</code> that best matches the reference.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--offset K</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">auto</span></td>
+        <td>Use a fixed offset instead: clone frame = reference frame + K.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--max-shift N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">15</span></td>
+        <td>Auto-align search range, in frames.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--region x,y,w,h</span></td>
+        <td><span class="type">numbers</span></td>
+        <td><span class="dflt">whole frame</span></td>
+        <td>Compare only this rectangle, in reference pixel coordinates.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--pixel-threshold T</span></td>
+        <td><span class="type">0..1</span></td>
+        <td><span class="dflt">0.1</span></td>
+        <td>pixelmatch colour tolerance. Raise it to forgive anti-aliasing.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--threshold T</span></td>
+        <td><span class="type">0..1</span></td>
+        <td><span class="dflt">0.05</span></td>
+        <td>Pass if mean mismatch ≤ T. Use <code>0.01</code> for pixel work.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--motion-threshold T</span></td>
+        <td><span class="type">seconds</span></td>
+        <td><span class="dflt">0.08</span></td>
+        <td>Pass if every |timing error| ≤ T seconds.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--fps N</span></td>
+        <td><span class="type">number</span></td>
+        <td><span class="dflt">25</span></td>
+        <td>Frame rate. Default comes from <code>frames.json</code> beside <code>--ref</code>, else <code>capture.json</code>, else 25.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--blur R</span></td>
+        <td><span class="type">px</span></td>
+        <td><span class="dflt">0</span></td>
+        <td>Box-blur both sets by R px before comparing (particles, grain, noise). Reports the blurred <em>and</em> the sharp mismatch.</td>
+      </tr>
+      <tr>
+        <td><span class="flag">--no-diffs</span></td>
+        <td><span class="type">flag</span></td>
+        <td><span class="dflt">off</span></td>
+        <td>Do not write diff PNGs.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="writes">What it writes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Paths are relative to the directory you pass on the command line.</caption>
+    <thead><tr><th>Writes</th><th>What is in it</th></tr></thead>
+    <tbody>
+      <tr><td><code>report.json</code></td><td>the same numbers as <code>report.md</code>, typed.</td></tr>
+      <tr><td><code>report.md</code></td><td>offset, mean mismatch, motion window, timing error, worst frames, the per-frame activity chart.</td></tr>
+      <tr><td><code>diff/NNNN.png</code></td><td>red where the pixels differ. Suppressed by <code>--no-diffs</code>.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="exit">Exit codes</h2>
+
+<div class="tw">
+  <table>
+    <caption>Exit codes. The full contract is on <a href="../agents.html">Using it from an agent</a>.</caption>
+    <thead><tr><th class="num">Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="num"><code>0</code></td><td>the comparison passed</td></tr>
+      <tr><td class="num"><code>1</code></td><td>the comparison failed — mismatch over threshold or timing error over <code>--motion-threshold</code></td></tr>
+      <tr><td class="num"><code>2</code></td><td>usage error — a path is not a frame directory</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="example">Example</h2>
+
+<pre class="cmd"><code>refilm compare --ref .refilm/runs/hero/ref/frames \
+  --clone .refilm/runs/hero/clone-1/frames --out .refilm/runs/hero/compare-1</code></pre>
+<pre class="out"><code># compare — reference vs clone
+
+- frames: 46 compared of 50 reference frames at 25 fps, 1080x408, clone offset -4 (auto-aligned)
+- mean mismatch: **6.57%** (limit 5.00%) → FAIL
+- worst frames: #18 9.5% @0.72s, #19 9.5% @0.76s, #17 9.4% @0.68s
+- motion window — reference 3–20 (0.72s, peak #3); clone 8–14 (0.28s, peak #14)
+- timing error (clone − reference): start 0.200s, end -0.240s, duration -0.440s, peak 0.440s (limit ±0.08s)
+
+## activity per frame (change since the previous frame, each side normalised to its own peak)
+…</code></pre>
+
+<h2 id="notes">Notes</h2>
+
+<h3>Read <code>setupWarnings</code> first</h3>
+<p>If the two captures were made with different viewport, fps, trigger, clock or seed, nothing below means anything. Re-record before changing code.</p>
+
+<h3>A large offset is a trigger problem</h3>
+<p>Not a rendering problem. Fix the delay or <code>--wait-before</code>, and do not let auto-alignment hide it.</p>
+
+<h3>Exit 1 is a result, not a crash</h3>
+<p>Same contract as <code>verify</code>: a CI job can gate on it.</p>
+
+<h2 id="related">Related</h2>
+
+<ul>
+  <li><a href="sheet.html"><code>refilm sheet</code></a> — look at reference, clone and diff side by side</li>
+  <li><a href="../compare-report.html">Reading a compare report</a> — how to read the report</li>
+</ul>
+
+    <nav class="pager" aria-label="Command pages">
+      <a href="spec.html"><span class="k">Previous</span>refilm spec</a>
+      <a class="next" href="sheet.html"><span class="k">Next</span>refilm sheet</a>
+    </nav>
+    </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.2 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>
