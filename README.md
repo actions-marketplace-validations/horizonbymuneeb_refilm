@@ -2,12 +2,20 @@
 
 **Record a reference animation, rebuild it in your code, then re-film the copy and compare the two frame by frame until the numbers match.**
 
+[![npm](https://img.shields.io/npm/v/refilm?color=3b6cf6&label=npm)](https://www.npmjs.com/package/refilm)
+[![CI](https://github.com/horizonbymuneeb/refilm/actions/workflows/ci.yml/badge.svg)](https://github.com/horizonbymuneeb/refilm/actions/workflows/ci.yml)
+[![node](https://img.shields.io/node/v/refilm?color=3b6cf6)](https://nodejs.org)
+[![license](https://img.shields.io/npm/l/refilm?color=3b6cf6)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-horizonbymuneeb.github.io%2Frefilm-3b6cf6)](https://horizonbymuneeb.github.io/refilm/)
+
 <p align="center">
-  <img src="docs/media/compare.gif" width="620" alt="Reference animation on top, the clone below, both filmed the same way at the same timestamps">
+  <img src="https://raw.githubusercontent.com/horizonbymuneeb/refilm/main/docs/media/compare.gif" width="620" alt="Reference animation on top, the clone below, both filmed the same way at the same timestamps">
 </p>
 <p align="center"><sub>The same 1.8s entrance, filmed identically. Top: the reference. Bottom: the clone, with different copy and a different accent colour — which is what motion fidelity allows.</sub></p>
 
 Most "clone this animation" attempts fail for one reason: nobody measures the result. An agent — or a person — looks at a reference, writes something that seems close, and stops. refilm makes the loop explicit and gives every step a number you can check.
+
+**[Documentation](https://horizonbymuneeb.github.io/refilm/)** · [Getting started](https://horizonbymuneeb.github.io/refilm/site/getting-started.html) · [Command reference](https://horizonbymuneeb.github.io/refilm/site/commands/) · [npm](https://www.npmjs.com/package/refilm) · [Changelog](CHANGELOG.md)
 
 ```bash
 npx refilm record  --url https://example.com --selector ".hero" --out .refilm/hero/ref --duration 1800
@@ -30,7 +38,7 @@ The images below are not mock-ups. They are the output of the commands in this r
 
 Same layout, but the cards rise together in 420ms on a linear curve instead of the reference's 820ms ease-out with a 100ms stagger. It looks fine at a glance.
 
-<img src="docs/media/verify-fail.png" width="700" alt="refilm verify reporting 37 failed checks with measured values and limits">
+<img src="https://raw.githubusercontent.com/horizonbymuneeb/refilm/main/docs/media/verify-fail.png" width="700" alt="refilm verify reporting 37 failed checks with measured values and limits">
 
 ```
 result: FAIL — 37 check(s) failed (exit 1)
@@ -40,7 +48,7 @@ Note what it says: not "looks different" but *`ease-out → linear`*, *`-700 ms 
 
 ### Round 2 — after fixing exactly what the report named
 
-<img src="docs/media/verify-pass.png" width="700" alt="refilm verify reporting 49 passing checks and exit 0">
+<img src="https://raw.githubusercontent.com/horizonbymuneeb/refilm/main/docs/media/verify-pass.png" width="700" alt="refilm verify reporting 49 passing checks and exit 0">
 
 ```
 result: PASS (exit 0)
@@ -50,13 +58,13 @@ result: PASS (exit 0)
 
 ### What the comparison itself looks like
 
-<img src="docs/media/compare-report.png" width="760" alt="refilm compare report: mean mismatch, motion window, timing error and a per-frame activity chart">
+<img src="https://raw.githubusercontent.com/horizonbymuneeb/refilm/main/docs/media/compare-report.png" width="760" alt="refilm compare report: mean mismatch, motion window, timing error and a per-frame activity chart">
 
 The **activity chart** is the part that makes easing debuggable: bar length is how much changed since the previous frame. Same shape means same easing and stagger. A clone that is front-loaded against an even reference is using too strong an ease-out — you can see it before you look at a single frame.
 
 ### And the frames, side by side
 
-<img src="docs/media/sheet-compare.png" width="820" alt="Labelled contact sheet: reference, clone and pixel diff for each timestamp">
+<img src="https://raw.githubusercontent.com/horizonbymuneeb/refilm/main/docs/media/sheet-compare.png" width="820" alt="Labelled contact sheet: reference, clone and pixel diff for each timestamp">
 
 `refilm sheet compare` lays out reference, clone and diff for every timestamp, so "what is still off" is something you look at rather than something you infer.
 
