@@ -370,12 +370,13 @@ export function specToMarkdown(spec: Spec): string {
   if (spec.unresolved.length) for (const item of spec.unresolved) lines.push(`- ${item}`);
   else lines.push("- (none: every row has a measured value)");
   lines.push("");
-  if (spec.fidelity === "mixed" || spec.additions.length) {
-    lines.push("## Additions (mixed only)");
-    if (spec.additions.length) for (const a of spec.additions) lines.push(`- ${a}`);
-    else lines.push("- (none listed)");
-    lines.push("");
-  }
+  // The template always carries this section: an implementer reading a motion spec must be able
+  // to see that nothing was added, not guess whether the section was omitted or forgotten.
+  lines.push("## Additions (mixed only)");
+  if (spec.additions.length) for (const a of spec.additions) lines.push(`- ${a}`);
+  else if (spec.fidelity === "mixed") lines.push("- (mixed fidelity with no additions listed — add them with --additions)");
+  else lines.push(`- (none: ${spec.fidelity} fidelity)`);
+  lines.push("");
   const facts = Object.entries(spec.staticFacts);
   if (facts.length) {
     lines.push("## Static facts");

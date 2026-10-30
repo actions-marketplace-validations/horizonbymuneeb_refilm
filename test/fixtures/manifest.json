@@ -12,10 +12,16 @@
       "fromY": 40,
       "toY": 0,
       "cardCount": 3,
-      "cardSize": { "width": 120, "height": 64 },
+      "cardSize": {
+        "width": 120,
+        "height": 64
+      },
       "totalMs": 1140,
       "selector": ".card",
-      "properties": ["transform", "opacity"]
+      "properties": [
+        "transform",
+        "opacity"
+      ]
     },
     "hover-tilt.html": {
       "kind": "css-transition",
@@ -25,7 +31,9 @@
       "toRotateDeg": -12,
       "toScale": 1.08,
       "selector": "#tilt",
-      "properties": ["transform"],
+      "properties": [
+        "transform"
+      ],
       "note": "No load animation: --trigger load on this page must yield a static capture."
     },
     "scroll-reveal.html": {
@@ -60,7 +68,10 @@
       "trigger": "load",
       "description": "9 seeded orbiters + progress arc, drawn on rAF from performance.now() only",
       "seed": 12345,
-      "canvasSize": { "width": 640, "height": 480 },
+      "canvasSize": {
+        "width": 640,
+        "height": 480
+      },
       "orbiterCount": 9,
       "windowMs": 2000,
       "selector": "#c",
@@ -72,13 +83,16 @@
       "trigger": "load",
       "description": "three.js box rotating on y/x, driven by performance.now()",
       "threeVersion": "178",
-      "canvasSize": { "width": 640, "height": 480 },
+      "canvasSize": {
+        "width": 640,
+        "height": 480
+      },
       "rotationYRadPerMs": 0.0012,
       "rotationXRadPerMs": 0.0006,
       "selector": "#c",
       "vendor": "vendor/three.module.js",
       "readyFlag": "window.__glReady",
-      "note": "Imports three from ./vendor/ — never a CDN — so CI is offline-safe. Needs an http:// origin because ES modules are CORS-blocked on file://."
+      "note": "Imports three from ./vendor/ \u2014 never a CDN \u2014 so CI is offline-safe. Needs an http:// origin because ES modules are CORS-blocked on file://."
     },
     "clip.mp4": {
       "kind": "video",
@@ -90,6 +104,18 @@
       "frameCount": 10,
       "bytes": 9399,
       "note": "9.4 KB, committed. Regenerate with: ffmpeg -f lavfi -i testsrc2=size=160x120:rate=10:duration=1 -pix_fmt yuv420p -c:v libx264 -preset veryfast -crf 28 clip.mp4"
+    },
+    "canvas-random.html": {
+      "kind": "canvas-2d",
+      "trigger": "load",
+      "description": "40 particles laid out with the page's real Math.random(); the control fixture that proves --seed is wired",
+      "canvasSize": {
+        "width": 640,
+        "height": 480
+      },
+      "particleCount": 40,
+      "deterministic": false,
+      "note": "Deliberately uses Math.random so a different --seed MUST change the frames. Paired with canvas-2d (own PRNG), which must not change with --seed."
     }
   }
 }
