@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] — 2026-10-30
+
+Documentation and project-infrastructure release. No code changes to the CLI.
+
+### Added
+
+- **Documentation site** at <https://horizonbymuneeb.github.io/refilm/> — 22 pages: getting started,
+  the workflow in depth, a page per command with every flag, canvas/3D, determinism, agents,
+  fidelity levels, reading a compare report, and the changelog. Plain static HTML with no
+  dependencies and no network at runtime, light and dark themes, deployed by GitHub Pages.
+- **`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`** — how to set up, the five rules the
+  project actually enforces (a check that cannot be measured is `skip`, never `pass`; a threshold is
+  never relaxed to go green), and how to report a vulnerability privately.
+- **Issue templates** for bugs, feature requests and bad captures, plus a pull request template that
+  asks for the evidence a reviewer needs.
+- **`publish.yml`** — tag-driven npm publishing with a tag/`package.json` match check, `verify:dist`,
+  tests, npm provenance, and automatic GitHub Release creation.
+- **`pages.yml`** — deploys `docs/` to GitHub Pages and fails if any local asset reference is missing.
+
+### Fixed
+
+- **The README did not render its images on npm.** Relative paths like `docs/media/x.png` resolve to
+  `npmjs.com/package/refilm/docs/media/x.png`, which 403s; every image is now an absolute
+  `raw.githubusercontent.com` URL, and a packaging test fails if a relative one reappears.
+- **CI was red on Node 20 and 22** because `ubuntu-latest` ships no `ffmpeg` and Playwright's bundled
+  copy is not on `PATH`. Every capture produced zero frames, so the frame, compare, report and
+  packaging tests failed. CI now installs ffmpeg before building.
+- `ci.yml` runs `npm run verify:dist`, so a packaging regression cannot merge.
+
 ## [0.1.2] — 2026-10-30
 
 Packaging fix. **0.1.0 and 0.1.1 were broken when installed from npm** — upgrade if you

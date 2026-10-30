@@ -357,7 +357,11 @@ a:hover {
   padding-bottom: 2px;
 }
 
-.main {
+.main:focus {
+  outline: none;
+}
+
+main {
   min-width: 0;
   padding: var(--s7) var(--s6) var(--s9);
 }
@@ -541,6 +545,12 @@ pre code {
   padding: 0;
   font-size: inherit;
   white-space: pre;
+}
+
+/* a focused scroll container gets the same ring as everything else */
+pre:focus-visible {
+  outline: var(--hair-strong) solid var(--accent);
+  outline-offset: 2px;
 }
 
 pre.cmd::before {
@@ -879,6 +889,22 @@ figcaption b {
   color: var(--ink-2);
 }
 
+/* terminal screenshots are dense; let a reader open one at full size.
+   A plain link, so it works with no JS and no lightbox dependency. */
+.zoom {
+  display: block;
+  text-decoration: none;
+  border-radius: var(--r2);
+}
+
+.zoom img {
+  transition: border-color 0.1s;
+}
+
+.zoom:hover img {
+  border-color: var(--accent);
+}
+
 .fig-pair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -888,6 +914,22 @@ figcaption b {
 
 .fig-pair figure {
   margin: 0;
+}
+
+/* a pair of dense screenshots: half width each, with the caption carrying the
+   numbers so the block is still evidence when the images are small */
+.fig-pair--shots {
+  align-items: start;
+  max-width: 100%;
+  gap: var(--s5);
+}
+
+.fig-pair--shots figcaption {
+  max-width: none;
+}
+
+.fig-pair--shots .res {
+  font-size: 11px;
 }
 
 /* --------------------------------------------------------------------------
@@ -942,6 +984,52 @@ figcaption b {
   font-size: var(--fs-micro);
   color: var(--ink-3);
   margin-left: auto;
+}
+
+/* compact link row (landing tail) */
+.linkrow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 3;
+  column-gap: var(--s6);
+  font-size: var(--fs-sm);
+  max-width: 100%;
+}
+
+.linkrow li {
+  margin: 0 0 var(--s2);
+  break-inside: avoid;
+  display: block;
+}
+
+.linkrow a {
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.linkrow a:hover {
+  text-decoration: underline;
+}
+
+.linkrow span {
+  color: var(--ink-3);
+  font-size: var(--fs-micro);
+  display: block;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .linkrow {
+    columns: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .linkrow {
+    columns: 1;
+  }
 }
 
 /* command index grid */
@@ -1172,6 +1260,19 @@ figcaption b {
   margin: 0;
 }
 
+/* the hero gif is portrait (720x992); cap it so the first screen carries the
+   sentence, the install line and the loop strip instead of one tall image */
+.hero__fig img {
+  width: 100%;
+  max-width: 244px;
+  height: auto;
+}
+
+.land .hero {
+  padding-bottom: var(--s5);
+  margin-bottom: var(--s5);
+}
+
 .hero__shot {
   border: var(--hair) solid var(--line);
   border-radius: var(--r2);
@@ -1190,12 +1291,15 @@ figcaption b {
   padding-top: 0;
 }
 
-.land .prose > * {
-  max-width: var(--measure-wide);
+/* the landing stacks dense terminal screenshots; give them the full column so
+   they stay legible, and let the zoom link open one at full size */
+.land figure {
+  max-width: 100%;
 }
 
-.land .prose > p {
-  max-width: var(--measure);
+.land figcaption {
+  font-size: var(--fs-sm);
+  line-height: 1.5;
 }
 
 .res {
@@ -1305,18 +1409,26 @@ figcaption b {
     display: block;
   }
 
+  /* Default (no JavaScript): the sidebar is expanded and usable. It is
+     collapsed only when the html.js flag is present, because only then is
+     there a button that can reopen it. */
   .sidebar {
     position: static;
     height: auto;
+    padding: var(--s4) var(--s5) var(--s5);
+    border-right: 0;
+    border-bottom: var(--hair) solid var(--line);
+  }
+
+  html.js .sidebar {
     max-height: 0;
     overflow: hidden;
     padding: 0 var(--s5);
-    border-right: 0;
     border-bottom: 0;
     transition: max-height 0.14s ease-out;
   }
 
-  body[data-nav="open"] .sidebar {
+  html.js body[data-nav="open"] .sidebar {
     max-height: 70vh;
     overflow-y: auto;
     padding: var(--s4) var(--s5) var(--s5);
@@ -1331,7 +1443,8 @@ figcaption b {
     display: none;
   }
 
-  .topbar__menu {
+  /* the toggle only exists when JS does */
+  html.js .topbar__menu {
     display: inline-flex;
   }
 

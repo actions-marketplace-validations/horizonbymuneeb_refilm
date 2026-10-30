@@ -44,8 +44,12 @@ test("verify: ref vs an identical clone passes with exit 0", async () => {
   const clone = tmpDir();
   const out = tmpDir();
   try {
-    await capture(fixture("fade-up.html"), ref);
-    await capture(fixture("fade-up.html"), clone);
+    // Virtual clock, not the real one. The pass criterion is ±80 ms of timing error, and on a
+    // loaded 2-vCPU box two real-clock captures of the same page can drift past that on their own —
+    // which would make this test flaky for a reason that has nothing to do with verify. The virtual
+    // clock makes both captures identical, so the only thing under test here is the gate itself.
+    await capture(fixture("fade-up.html"), ref, ["--clock", "virtual", "--seed", "1"]);
+    await capture(fixture("fade-up.html"), clone, ["--clock", "virtual", "--seed", "1"]);
     const spec = await specOf(ref, join(ref, "spec.json"));
 
     const res = await runCli([

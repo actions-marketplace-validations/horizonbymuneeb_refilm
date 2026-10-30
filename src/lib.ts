@@ -6,7 +6,7 @@ import { join, resolve, dirname, isAbsolute } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-export const VERSION = "0.1.2";
+export const VERSION = "0.1.3";
 
 /** Exit codes are part of the CLI contract: agents and CI branch on these. */
 export const EXIT = {

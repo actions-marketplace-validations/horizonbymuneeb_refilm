@@ -8,6 +8,9 @@
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="site/style.css">
+<!-- set before first paint so the mobile nav is collapsed only when JS can
+     reopen it; with JS off the sidebar simply stays expanded and usable -->
+<script>document.documentElement.className += " js";</script>
 <script src="site/site.js" defer></script>
 </head>
 <body class="land">
@@ -69,7 +72,7 @@
         </div>
   </nav>
 
-  <main class="main" id="main">
+  <main class="main" id="main" tabindex="-1">
     <div class="wrap">
 <section class="hero">
   <div>
@@ -97,8 +100,8 @@ refilm doctor</code></pre>
     <img src="media/compare.gif" width="720" height="992"
          alt="A 46-frame comparison: the reference animation plays on top, the rebuilt clone below, both filmed at the same timestamps. The clone uses different copy and a different accent colour.">
     <figcaption>
-      The same 1.8&nbsp;s entrance, filmed identically. Top: the reference. Bottom: the
-      clone — different copy, different accent colour, which is what motion fidelity allows.
+      The same 1.8&nbsp;s entrance, filmed identically. Top: the reference. Bottom: the clone —
+      different copy and accent colour, which is what motion fidelity allows.
     </figcaption>
   </figure>
 </section>
@@ -133,67 +136,41 @@ refilm doctor</code></pre>
   </li>
 </ol>
 
-<p>
-  The loop only works because the failure is specific. Below is one real run: the plausible first
-  pass an agent writes — same layout, cards rising together in <span class="num">420&nbsp;ms</span>
-  on a linear curve instead of the reference's <span class="num">820&nbsp;ms</span> ease-out with a
-  <span class="num">100&nbsp;ms</span> stagger — and then the same clone after fixing exactly what
-  the report named.
-</p>
-
-<figure>
-  <p class="res res--fail">Round 1 · <code>result: FAIL — 37 check(s) failed (exit 1)</code></p>
-  <img src="media/verify-fail.png" width="1556" height="498"
-       alt="Terminal output of refilm verify in round 1: each line names a check, its measured difference in milliseconds and the limit, for example easing ease-out to linear and duration -175 ms against a limit of ±80 ms. The run ends with result: FAIL — 37 check(s) failed (exit 1).">
-  <figcaption>
-    Not "looks different" but <em>ease-out&nbsp;→&nbsp;linear</em>,
-    <em>−700&nbsp;ms (limit ±80&nbsp;ms)</em>, <em>travel 14.1% (limit ≤10%)</em>. Every failure is
-    a number and a named cause.
-  </figcaption>
-</figure>
-
-<figure>
-  <p class="res res--pass">Round 2 · <code>result: PASS (exit 0)</code></p>
-  <img src="media/verify-pass.png" width="1462" height="498"
-       alt="Terminal output of refilm verify in round 2: 49 checks pass and 0 fail, and 11 checks are skipped with a written reason, ending with result: PASS (exit 0).">
-  <figcaption>
-    <span class="num">49</span> checks pass, <span class="num">0</span> fail — and
-    <span class="num">11</span> are skipped with a reason, because a skip is not a pass and refilm
-    refuses to report a check it could not measure as green.
-  </figcaption>
-</figure>
+<div class="fig-pair fig-pair--shots">
+  <figure>
+    <p class="res res--fail">Round 1 · <code>result: FAIL — 37 check(s) failed (exit 1)</code></p>
+    <a class="zoom" href="media/verify-fail.png"><img src="media/verify-fail.png" width="1556" height="498"
+         alt="Terminal output of refilm verify in round 1: each line names a check, its measured difference in milliseconds and the limit, for example easing ease-out to linear and duration -175 ms against a limit of plus or minus 80 ms. The run ends with result: FAIL, 37 check(s) failed, exit 1."></a>
+    <figcaption>
+      <b>The plausible first pass an agent writes</b>: <span class="num">420&nbsp;ms</span> linear
+      instead of <span class="num">820&nbsp;ms</span> ease-out with a
+      <span class="num">100&nbsp;ms</span> stagger. Every failure is a number and a named cause.
+    </figcaption>
+  </figure>
+  <figure>
+    <p class="res res--pass">Round 2 · <code>result: PASS (exit 0)</code></p>
+    <a class="zoom" href="media/verify-pass.png"><img src="media/verify-pass.png" width="1462" height="498"
+         alt="Terminal output of refilm verify in round 2: 49 checks pass and 0 fail, and 11 checks are skipped with a written reason, ending with result: PASS, exit 0."></a>
+    <figcaption>
+      <span class="num">49</span> pass, <span class="num">0</span> fail, and
+      <span class="num">11</span> skipped with a reason — a skip is not a pass.
+    </figcaption>
+  </figure>
+</div>
 
 <h2>Go deeper</h2>
 
-<div class="cols">
-  <div>
-    <h3>Learn the loop</h3>
-    <ul>
-      <li><a href="site/getting-started.html">Getting started</a></li>
-      <li><a href="site/workflow.html">The workflow</a></li>
-      <li><a href="site/fidelity.html">Fidelity levels</a></li>
-      <li><a href="site/compare-report.html">Reading a compare report</a></li>
-    </ul>
-  </div>
-  <div>
-    <h3>Reference</h3>
-    <ul>
-      <li><a href="site/commands/index.html">Command reference</a></li>
-      <li><a href="site/commands/record.html">refilm record</a></li>
-      <li><a href="site/commands/verify.html">refilm verify</a></li>
-      <li><a href="site/canvas.html">Canvas and 3D</a></li>
-    </ul>
-  </div>
-  <div>
-    <h3>In production</h3>
-    <ul>
-      <li><a href="site/agents.html">Using it from an agent</a></li>
-      <li><a href="site/determinism.html">Determinism</a></li>
-      <li><a href="site/changelog.html">Changelog</a></li>
-      <li><a href="https://github.com/horizonbymuneeb/refilm">GitHub</a></li>
-    </ul>
-  </div>
-</div>
+<ul class="linkrow">
+  <li><a href="site/getting-started.html">Getting started</a> <span>install, doctor, first run</span></li>
+  <li><a href="site/workflow.html">The workflow</a> <span>the loop and the pass criteria</span></li>
+  <li><a href="site/commands/index.html">Command reference</a> <span>every flag, every exit code</span></li>
+  <li><a href="site/fidelity.html">Fidelity levels</a> <span>motion, pixel, mixed</span></li>
+  <li><a href="site/compare-report.html">Reading a compare report</a> <span>what the numbers mean</span></li>
+  <li><a href="site/canvas.html">Canvas and 3D</a> <span>--gl, virtual clock, channels</span></li>
+  <li><a href="site/determinism.html">Determinism</a> <span>the byte-identical guarantee</span></li>
+  <li><a href="site/agents.html">Using it from an agent</a> <span>--json, exit codes, CI</span></li>
+  <li><a href="site/changelog.html">Changelog</a> <span>every release</span></li>
+</ul>
     </div>
   </main>
 </div>

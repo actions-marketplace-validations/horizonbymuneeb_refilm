@@ -1,7 +1,9 @@
 /* refilm docs — the only script on the site.
-   Two jobs, no dependencies, no network:
+   Three jobs, no dependencies, no network:
      1. mobile nav toggle (the sidebar is a <nav>, collapsed by default under 900px)
-     2. a copy button injected into command blocks, which degrades to plain
+     2. tabindex on <pre> blocks that scroll sideways, so the hidden part of a
+        command is reachable by keyboard
+     3. a copy button injected into command blocks, which degrades to plain
         selectable text when JS is off or the clipboard API is unavailable */
 (function () {
   "use strict";
@@ -33,7 +35,24 @@
     else if (mq.addListener) mq.addListener(onChange);
   }
 
-  /* ---- 2. copy buttons on command blocks -------------------------------- */
+  /* ---- 2. keyboard access to code that scrolls sideways -----------------
+     A <pre> that overflows is a scroll container; without tabindex a keyboard
+     user cannot scroll it and the hidden right-hand side is unreachable. */
+  Array.prototype.forEach.call(document.querySelectorAll("pre"), function (pre) {
+    var check = function () {
+      if (pre.scrollWidth > pre.clientWidth + 2) {
+        if (!pre.hasAttribute("tabindex")) pre.setAttribute("tabindex", "0");
+        pre.setAttribute("role", "region");
+        if (!pre.hasAttribute("aria-label")) pre.setAttribute("aria-label", "Code, scrolls horizontally");
+      } else if (pre.getAttribute("tabindex") === "0") {
+        pre.removeAttribute("tabindex");
+      }
+    };
+    check();
+    window.addEventListener("resize", check);
+  });
+
+  /* ---- 3. copy buttons on command blocks -------------------------------- */
   if (!navigator.clipboard) return;
   var blocks = document.querySelectorAll("pre.cmd");
   Array.prototype.forEach.call(blocks, function (pre) {
