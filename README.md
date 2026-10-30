@@ -188,7 +188,9 @@ refilm init     [--dir <project>]
 refilm doctor
 ```
 
-Run any of them with `--help` for the full flag list.
+Run any of them with `--help` for the full flag list, or read the
+[command reference](https://horizonbymuneeb.github.io/refilm/site/commands/) — one page per command
+with every flag, what it writes to disk, and the exit codes it can return.
 
 ## How it fits together
 
@@ -203,6 +205,39 @@ skill/           the agent skill installed by `refilm install`
 ```
 
 [`CONTRACT.md`](CONTRACT.md) documents the internal contract, [`docs/`](docs/) has the per-topic notes (fidelity levels, reading a compare report), and [`demo/`](demo/) holds the reference and both clone rounds used in the images above.
+
+## Documentation
+
+Full documentation lives at **[horizonbymuneeb.github.io/refilm](https://horizonbymuneeb.github.io/refilm/)**:
+
+| | |
+|---|---|
+| [Getting started](https://horizonbymuneeb.github.io/refilm/site/getting-started.html) | install, `doctor`, and a first complete run |
+| [The workflow](https://horizonbymuneeb.github.io/refilm/site/workflow.html) | the loop in depth, fidelity levels, pass criteria |
+| [Command reference](https://horizonbymuneeb.github.io/refilm/site/commands/) | every command and flag |
+| [Canvas and 3D](https://horizonbymuneeb.github.io/refilm/site/canvas.html) | `--gl`, `--clock virtual`, channel kinds |
+| [Determinism](https://horizonbymuneeb.github.io/refilm/site/determinism.html) | what the byte-identical guarantee covers |
+| [Using it from an agent](https://horizonbymuneeb.github.io/refilm/site/agents.html) | the skill, the `--json` contract, CI |
+| [Fidelity levels](https://horizonbymuneeb.github.io/refilm/site/fidelity.html) | `motion` vs `pixel` vs `mixed` |
+| [Reading a compare report](https://horizonbymuneeb.github.io/refilm/site/compare-report.html) | what the numbers mean and what to fix |
+| [Changelog](https://horizonbymuneeb.github.io/refilm/site/changelog.html) | every release |
+
+In the repository: [CONTRACT.md](CONTRACT.md) (internal architecture), [skill/SKILL.md](skill/SKILL.md)
+(the agent skill), [demo/](demo/) (the reference and both clone rounds used in the images above),
+[CHANGELOG.md](CHANGELOG.md).
+
+## Contributing
+
+Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers the setup and the
+five rules the project actually enforces — the short version is that a check which cannot be measured
+is reported as `skip`, never as `pass`, and a threshold is never relaxed to make a run green.
+
+- [Report a bug](https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/horizonbymuneeb/refilm/issues/new?template=feature_request.md)
+- [Report a bad capture](https://github.com/horizonbymuneeb/refilm/issues/new?template=capture_quality.md)
+- [Ask a question](https://github.com/horizonbymuneeb/refilm/discussions)
+
+Security issues go to email, not a public issue — see [SECURITY.md](SECURITY.md).
 
 ## Development
 

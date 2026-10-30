@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://horizonbymuneeb.github.io/refilm/
+    about: Install, the workflow, and a page per command — start here.
+  - name: Getting started
+    url: https://horizonbymuneeb.github.io/refilm/site/getting-started.html
+    about: Install, run doctor, and do a first complete run end to end.
+  - name: Command reference
+    url: https://horizonbymuneeb.github.io/refilm/site/commands/
+    about: Every command, every flag, what it writes and which exit codes it returns.
+  - name: Questions and ideas
+    url: https://github.com/horizonbymuneeb/refilm/discussions
+    about: Ask a question or float an idea before opening an issue.
+  - name: Security report
+    url: https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md
+    about: Please report vulnerabilities by email, not in a public issue.

@@ -58,5 +58,9 @@
     "@types/node": "^22.20.5",
     "@types/pngjs": "^6.0.5",
     "typescript": "^5.9.3"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "_note": "GitHub Packages requires a scoped name; npm registry uses the unscoped one."
 }

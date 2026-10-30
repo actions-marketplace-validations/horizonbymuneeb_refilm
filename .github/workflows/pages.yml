@@ -1,0 +1,79 @@
+name: Pages
+
+# Publishes the documentation site from docs/ to GitHub Pages.
+# The site is plain static HTML with no build step, so this is a deploy, not a compile.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # A docs site that 404s on its own images is worse than no site, so the deploy
+      # refuses to run when a referenced asset is missing.
+      - name: Check every referenced asset exists
+        run: |
+          node - <<'NODE'
+          const { readFileSync, existsSync, readdirSync } = require("node:fs");
+          const { join, dirname, resolve } = require("node:path");
+
+          const walk = (dir) =>
+            readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+              e.isDirectory() ? walk(join(dir, e.name)) : e.name.endsWith(".html") ? [join(dir, e.name)] : [],
+            );
+
+          const pages = walk("docs");
+          const missing = [];
+          let checked = 0;
+
+          for (const page of pages) {
+            const html = readFileSync(page, "utf8");
+            for (const m of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+              const url = m[1];
+              if (/^(https?:|mailto:|#|data:)/.test(url)) continue;
+              const target = resolve(dirname(page), url.split("#")[0].split("?")[0]);
+              checked++;
+              if (!existsSync(target)) missing.push(`${page} -> ${url}`);
+            }
+          }
+
+          console.log(`${pages.length} page(s), ${checked} local reference(s) checked`);
+          if (missing.length) {
+            console.error("missing assets:");
+            for (const m of missing) console.error("  " + m);
+            process.exit(1);
+          }
+          console.log("every local reference resolves");
+          NODE
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

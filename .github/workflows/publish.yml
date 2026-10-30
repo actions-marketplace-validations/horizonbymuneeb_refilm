@@ -1,0 +1,87 @@
+name: Publish
+
+# Publishes to npm when a version tag is pushed, and creates the matching GitHub Release.
+#
+# Why tag-driven: a release should be a deliberate act with an auditable ref, not a side effect
+# of merging to main. `npm version patch && git push --follow-tags` is the whole release ritual.
+#
+# Requires the repository secret NPM_TOKEN (an npm automation token). Without it the job stops
+# before publishing rather than half-succeeding.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and pack, but do not publish"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write # create the GitHub Release
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    name: publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      # A tag that does not match package.json would publish a version nobody asked for.
+      - name: Check the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::tag v$TAG does not match package.json version $PKG"
+            exit 1
+          fi
+          echo "tag v$TAG matches package.json"
+
+      # The packaged shape is what users install; a source checkout cannot reveal a missing
+      # dist/inpage (that bug shipped in 0.1.0 and 0.1.1), so this runs before every publish.
+      - name: Verify the packaged shape
+        run: npm run verify:dist
+
+      - name: Test
+        run: npm test
+        env:
+          REFILM_CI: "1"
+
+      - name: Pack
+        run: npm pack
+
+      - name: Publish to npm
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create the GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: false
+          body_path: CHANGELOG.md
+          files: refilm-*.tgz

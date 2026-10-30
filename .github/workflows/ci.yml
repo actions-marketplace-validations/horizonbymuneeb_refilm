@@ -50,6 +50,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # A source checkout cannot reveal a packaging bug: 0.1.0 and 0.1.1 shipped without
+      # dist/inpage and every npm install failed at record time. This asserts the shape a
+      # consumer actually receives.
+      - name: Verify the packaged shape
+        run: npm run verify:dist
+
       - name: Test
         run: npm test
         env:
