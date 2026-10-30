@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>scroll-reveal fixture</title>
+<!--
+  EXPECTED VALUES
+  ----------------------------------------------------------------
+  A tall page: 10 sections, each 400px tall, page scroll height 4000px.
+  Every .reveal starts opacity:0 / translateY(60px) and gets .in added when
+  IntersectionObserver sees it, which transitions it over 500ms.
+
+  The deterministic, scroll-driven part is the CSS scroll-timeline bar at
+  the top: #progress scales 0 -> 1 linearly over the whole document scroll
+  range (view timeline). That is what a `--trigger scroll` capture measures:
+    scrollHeight  : 4000
+    viewportH     : 480  (the test records at 640x480)
+    scrollRange   : 4000 - 480 = 3520
+    progressAtY(y): y / 3520
+  The observer-based reveals are NOT asserted numerically (IntersectionObserver
+  timing is not frame-deterministic); they exist so `spec`/`inspect` has
+  declared animations to find.
+-->
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #111; }
+  #progress {
+    position: fixed; top: 0; left: 0; height: 6px; width: 100%;
+    background: #2b6cb0;
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+    z-index: 10;
+  }
+  @supports (animation-timeline: scroll()) {
+    #progress {
+      animation: grow linear both;
+      animation-timeline: scroll(root block);
+      animation-duration: 1ms; /* ignored, scroll timeline drives it */
+    }
+  }
+  @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  .section {
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #e5e5e5;
+    box-sizing: border-box;
+  }
+  .reveal {
+    width: 180px; height: 90px; border-radius: 10px;
+    background: #4a5568; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(60px);
+    transition: opacity 500ms ease-out, transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+  <div id="progress"></div>
+  <div id="sections"></div>
+  <script>
+    // Deterministic DOM build: no timers, no randomness, no network.
+    const host = document.getElementById("sections");
+    for (let i = 0; i < 10; i++) {
+      const s = document.createElement("section");
+      s.className = "section";
+      const d = document.createElement("div");
+      d.className = "reveal";
+      d.id = "reveal-" + i;
+      d.textContent = "section " + i;
+      d.dataset.anim = "scroll-reveal";
+      d.dataset.durationMs = "500";
+      d.dataset.fromY = "60";
+      d.dataset.toY = "0";
+      s.appendChild(d);
+      host.appendChild(s);
+    }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) e.target.classList.add("in");
+    }, { threshold: 0.25 });
+    for (const el of document.querySelectorAll(".reveal")) io.observe(el);
+  </script>
+</body>
+</html>

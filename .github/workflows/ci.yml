@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# One run per ref: a new push cancels the previous, still-running build.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # `npm ci` obeys NODE_ENV=production if it is set in the environment, which
+      # silently drops devDependencies and leaves `tsc` missing. --include=dev makes
+      # the install deterministic regardless of the runner's NODE_ENV.
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      # dist/ is gitignored, so every job builds before testing. Tests import from
+      # ../dist/*, not from src, which is why the build is a hard prerequisite and
+      # not a `pretest` hook (package.json stays the Lead's file).
+      - name: Build
+        run: npm run build
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+        env:
+          # Headless box: keep Chromium on the software GL path so the gl-three
+          # fixture renders without a real GPU.
+          REFILM_CI: "1"
+
+      - name: Doctor (environment snapshot)
+        if: always()
+        run: node dist/cli.js doctor --json || true
+
+      # Compare sheets and the HTML/Markdown reports are the only artefacts that
+      # explain a failed visual test, so they are uploaded exactly when they exist.
+      - name: Upload compare sheets and reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: refilm-artifacts-node${{ matrix.node }}
+          path: |
+            **/report.md
+            **/report.html
+            **/sheet*.png
+            **/sheet*.md
+            **/compare/**/*.png
+            **/diff/**/*.png
+            **/*.capture.json
+            **/capture.json
+            **/inspect.json
+            **/track.json
+            **/spec.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: refilm-test-logs-node${{ matrix.node }}
+          path: |
+            /tmp/tester-evidence/**
+            /tmp/refilm-*/**
+          if-no-files-found: ignore
+          retention-days: 7

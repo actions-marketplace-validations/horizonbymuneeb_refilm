@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fade-up fixture</title>
+<!--
+  EXPECTED VALUES (read by test/integration/record.test.js and spec.test.js)
+  ----------------------------------------------------------------
+  Three cards, each animates translateY(40px) -> 0 and opacity 0 -> 1.
+  durationMs : 900
+  easing     : cubic-bezier(0.22, 1, 0.36, 1)
+  staggerMs  : 120   (card 0 at 0ms, card 1 at 120ms, card 2 at 240ms)
+  trigger    : load
+  totalMs    : 240 + 900 = 1140
+
+  The values are ALSO declared on each element as data-* attributes so the
+  spec command can read them without re-deriving, and so a test can assert
+  the page and the manifest agree.
+-->
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  body {
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #111;
+    padding: 24px;
+  }
+  h1 { font-size: 18px; margin: 0 0 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    /* Known geometry: every card is exactly 120x64 so a test can measure it. */
+    width: 120px;
+    height: 64px;
+    border-radius: 8px;
+    background: #2b6cb0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    /* start state: shifted down 40px and transparent */
+    transform: translateY(40px);
+    opacity: 0;
+    animation-name: fade-up;
+    animation-duration: 900ms;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation-fill-mode: both;
+    animation-delay: 0ms;
+  }
+  .card:nth-child(2) { animation-delay: 120ms; }
+  .card:nth-child(3) { animation-delay: 240ms; }
+
+  @keyframes fade-up {
+    from { transform: translateY(40px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+</style>
+</head>
+<body>
+  <h1>fade-up</h1>
+  <div class="stack">
+    <div class="card" id="card-0" data-anim="fade-up"
+         data-duration-ms="900" data-easing="cubic-bezier(0.22, 1, 0.36, 1)"
+         data-stagger-ms="120" data-from-y="40" data-to-y="0">card 0</div>
+    <div class="card" id="card-1" data-anim="fade-up"
+         data-duration-ms="900" data-easing="cubic-bezier(0.22, 1, 0.36, 1)"
+         data-stagger-ms="120" data-from-y="40" data-to-y="0">card 1</div>
+    <div class="card" id="card-2" data-anim="fade-up"
+         data-duration-ms="900" data-easing="cubic-bezier(0.22, 1, 0.36, 1)"
+         data-stagger-ms="120" data-from-y="40" data-to-y="0">card 2</div>
+  </div>
+</body>
+</html>

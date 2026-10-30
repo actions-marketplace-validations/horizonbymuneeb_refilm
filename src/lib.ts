@@ -53,7 +53,7 @@ export interface Args {
  * Repeated keys collect into an array.
  */
 export function parseArgs(argv: string[], defaults: Record<string, any> = {}): Args {
-  const out: Args = { _: [], ...defaults };
+  const out: Args = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i];
     if (!token.startsWith("--")) {
@@ -72,6 +72,11 @@ export function parseArgs(argv: string[], defaults: Record<string, any> = {}): A
       assign(out, key, next);
       i++;
     }
+  }
+  // Defaults fill the gaps only: a flag the user passed always wins, and repeated
+  // flags still collect into an array.
+  for (const key of Object.keys(defaults)) {
+    if (out[key] === undefined) out[key] = defaults[key];
   }
   return out;
 }

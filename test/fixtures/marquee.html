@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>marquee fixture</title>
+<!--
+  EXPECTED VALUES
+  ----------------------------------------------------------------
+  An infinite linear loop, the classic "loop point" test case.
+    track width    : 1200px  (12 items x 100px)
+    durationMs     : 2000    (one full loop)
+    easing         : linear
+    iterations     : infinite
+    distance       : -1200px  (translateX 0 -> -1200)
+  A capture of 1200ms therefore covers 60% of the loop; frame 0 and the
+  frame at 1000ms must be exactly 600px apart in the same direction.
+  This is the fixture that catches a clone which eases its marquee: linear
+  means the position is a pure function of t, so speed = 1200px / 2000ms
+  = 0.6 px/ms.
+-->
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; padding: 0; background: #fff; overflow: hidden; }
+  body {
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #111;
+    display: flex;
+    align-items: center;
+    height: 100vh;
+  }
+  #viewport { width: 100%; overflow: hidden; }
+  #track {
+    display: flex;
+    width: 1200px;
+    will-change: transform;
+    animation: marquee 2000ms linear infinite;
+  }
+  .item {
+    flex: 0 0 100px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #fff;
+    background: #805ad5;
+    border-right: 1px solid rgba(255,255,255,0.35);
+    box-sizing: border-box;
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-1200px); }
+  }
+</style>
+</head>
+<body>
+  <div id="viewport"><div id="track" data-anim="marquee"
+       data-duration-ms="2000" data-distance-px="1200" data-easing="linear"
+       data-iterations="infinite"></div></div>
+  <script>
+    const track = document.getElementById("track");
+    for (let i = 0; i < 12; i++) {
+      const d = document.createElement("div");
+      d.className = "item";
+      d.textContent = String(i + 1).padStart(2, "0");
+      track.appendChild(d);
+    }
+  </script>
+</body>
+</html>

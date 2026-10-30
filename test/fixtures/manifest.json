@@ -1,0 +1,95 @@
+{
+  "note": "Machine-readable expected values for every fixture. Tests assert against these numbers, so a fixture edit that changes its motion must update this file too. Every value is measured from the fixture source, never guessed.",
+  "fixtures": {
+    "fade-up.html": {
+      "kind": "css-keyframes",
+      "trigger": "load",
+      "description": "3 cards, translateY(40px)->0 + opacity 0->1, cubic-bezier(.22,1,.36,1), 900ms, stagger 120ms",
+      "durationMs": 900,
+      "staggerMs": 120,
+      "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "easingFamily": "ease-out",
+      "fromY": 40,
+      "toY": 0,
+      "cardCount": 3,
+      "cardSize": { "width": 120, "height": 64 },
+      "totalMs": 1140,
+      "selector": ".card",
+      "properties": ["transform", "opacity"]
+    },
+    "hover-tilt.html": {
+      "kind": "css-transition",
+      "trigger": "hover",
+      "description": "#tilt rotates to -12deg and scales to 1.08 on :hover over 300ms",
+      "durationMs": 300,
+      "toRotateDeg": -12,
+      "toScale": 1.08,
+      "selector": "#tilt",
+      "properties": ["transform"],
+      "note": "No load animation: --trigger load on this page must yield a static capture."
+    },
+    "scroll-reveal.html": {
+      "kind": "css-scroll",
+      "trigger": "scroll",
+      "description": "10 sections x 400px, #progress scales 0->1 over the scroll range; reveals fade in on IntersectionObserver",
+      "scrollHeight": 4000,
+      "sectionHeight": 400,
+      "sectionCount": 10,
+      "revealDurationMs": 500,
+      "revealFromY": 60,
+      "progressSelector": "#progress",
+      "revealSelector": ".reveal",
+      "note": "Only the scroll-timeline #progress is numerically asserted; IntersectionObserver reveal timing is not frame-deterministic."
+    },
+    "marquee.html": {
+      "kind": "css-loop",
+      "trigger": "load",
+      "description": "12 x 100px items translating 0 -> -1200px over 2000ms, linear, infinite",
+      "durationMs": 2000,
+      "distancePx": 1200,
+      "itemCount": 12,
+      "itemWidth": 100,
+      "easing": "linear",
+      "easingFamily": "linear",
+      "iterations": "infinite",
+      "selector": "#track",
+      "pxPerMs": 0.6
+    },
+    "canvas-2d.html": {
+      "kind": "canvas-2d",
+      "trigger": "load",
+      "description": "9 seeded orbiters + progress arc, drawn on rAF from performance.now() only",
+      "seed": 12345,
+      "canvasSize": { "width": 640, "height": 480 },
+      "orbiterCount": 9,
+      "windowMs": 2000,
+      "selector": "#c",
+      "deterministic": true,
+      "note": "The determinism fixture. Uses a seeded mulberry32 PRNG, never Math.random()."
+    },
+    "gl-three.html": {
+      "kind": "webgl",
+      "trigger": "load",
+      "description": "three.js box rotating on y/x, driven by performance.now()",
+      "threeVersion": "178",
+      "canvasSize": { "width": 640, "height": 480 },
+      "rotationYRadPerMs": 0.0012,
+      "rotationXRadPerMs": 0.0006,
+      "selector": "#c",
+      "vendor": "vendor/three.module.js",
+      "readyFlag": "window.__glReady",
+      "note": "Imports three from ./vendor/ — never a CDN — so CI is offline-safe. Needs an http:// origin because ES modules are CORS-blocked on file://."
+    },
+    "clip.mp4": {
+      "kind": "video",
+      "description": "1s, 160x120, 10fps h264 clip for refilm frames",
+      "durationS": 1.0,
+      "width": 160,
+      "height": 120,
+      "fps": 10,
+      "frameCount": 10,
+      "bytes": 9399,
+      "note": "9.4 KB, committed. Regenerate with: ffmpeg -f lavfi -i testsrc2=size=160x120:rate=10:duration=1 -pix_fmt yuv420p -c:v libx264 -preset veryfast -crf 28 clip.mp4"
+    }
+  }
+}

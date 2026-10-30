@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>gl-three fixture</title>
+<!--
+  EXPECTED VALUES
+  ----------------------------------------------------------------
+  A three.js scene with one rotating mesh, driven by performance.now().
+  three is imported from the LOCAL vendored copy in ./vendor/ — never from a
+  CDN — so the whole suite is offline-safe in CI.
+
+    vendor       : vendor/three.module.js  (+ ./three.core.js it imports)
+    three version: 0.178.0
+    mesh         : BoxGeometry 1x1x1, MeshStandardMaterial
+    rotation     : y = t * 0.0012 rad/ms, x = t * 0.0006 rad/ms
+    canvas       : 640x480, devicePixelRatio pinned to 1
+    renderer     : WebGLRenderer, antialias off, alpha off, powerPreference
+                   "low-power" so a software (SwiftShader) GL stack is happy
+
+  The page reports its own readiness on window.__glReady once the first frame
+  has been rendered, so a capture can wait for it instead of guessing.
+  It also exposes window.__threeVersion for the inspect/gl tests to assert
+  against without parsing the module.
+-->
+<style>
+  html, body { margin: 0; padding: 0; background: #101418; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+  <canvas id="c" width="640" height="480"></canvas>
+  <script type="module">
+    import * as THREE from "./vendor/three.module.js";
+
+    const canvas = document.getElementById("c");
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: false,
+      alpha: false,
+      powerPreference: "low-power",
+    });
+    renderer.setPixelRatio(1);
+    renderer.setSize(640, 480, false);
+    renderer.setClearColor(0x101418, 1);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, 640 / 480, 0.1, 100);
+    camera.position.set(0, 0, 3.2);
+
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x2b6cb0,
+      roughness: 0.45,
+      metalness: 0.1,
+      flatShading: true,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+    const key = new THREE.DirectionalLight(0xffffff, 2.0);
+    key.position.set(2, 3, 4);
+    scene.add(key);
+
+    const START = performance.now();
+
+    function frame() {
+      // Only performance.now() drives the animation — no Date.now(), no
+      // accumulated delta, so frame state is a pure function of t.
+      const t = performance.now() - START;
+      mesh.rotation.y = t * 0.0012;
+      mesh.rotation.x = t * 0.0006;
+      renderer.render(scene, camera);
+      requestAnimationFrame(frame);
+    }
+
+    renderer.render(scene, camera); // first frame, synchronously
+    window.__threeVersion = THREE.REVISION;
+    window.__glReady = true;
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

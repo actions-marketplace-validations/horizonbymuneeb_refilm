@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hover-tilt fixture</title>
+<!--
+  EXPECTED VALUES
+  ----------------------------------------------------------------
+  #tilt starts at rotate(0deg) and moves to rotate(-12deg) scale(1.08)
+  on :hover, with a 300ms transition. There is no load animation at all,
+  so a `--trigger load` capture of this page must be a static frame: it is
+  the negative control for the fade-up fixture.
+  transitionMs : 300
+  toRotateDeg  : -12
+  toScale      : 1.08
+  trigger      : hover
+-->
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body {
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+  #tilt {
+    width: 160px;
+    height: 160px;
+    border-radius: 12px;
+    background: #2f855a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    transform: rotate(0deg) scale(1);
+    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+  #tilt:hover {
+    transform: rotate(-12deg) scale(1.08);
+  }
+</style>
+</head>
+<body>
+  <div id="tilt" data-anim="hover-tilt" data-duration-ms="300"
+       data-to-rotate-deg="-12" data-to-scale="1.08">hover me</div>
+</body>
+</html>
