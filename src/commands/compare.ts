@@ -161,32 +161,41 @@ function mismatch(a: PNG, b: PNG, pixelThreshold: number, diff?: PNG): number {
 const round = (n: number, digits = 4) => Number(n.toFixed(digits));
 
 /**
- * Frames where something visibly changes. The floor is relative to the busiest transition on that
- * side (5%) with a small absolute minimum, so a slow fade is not cut off at the tail and a still
- * scene does not report phantom motion.
+ * Frames where the animation is actually moving.
+ *
+ * A per-frame floor is the obvious approach and it is the wrong one: the floor that keeps noise out
+ * of a still scene also truncates the long tail of a slow ease-out, which is exactly the part that
+ * distinguishes a 900ms clone from a 1200ms one. Instead the window is read off the cumulative
+ * change: motion starts when 2% of the total change has happened and ends when 98% has. That is
+ * scale-free (noise, blur and pixel size all cancel), and it stretches correctly when the clone is
+ * slower, which is the measurement the timing gate depends on.
  */
 function motionWindow(activity: number[], fps: number): MotionWindow {
-  const peak = activity.length ? activity.indexOf(Math.max(...activity)) : -1;
-  const top = peak >= 0 ? activity[peak] : 0;
-  const floor = Math.max(0.0005, top * 0.05);
+  const n = activity.length;
+  const peak = n ? activity.indexOf(Math.max(...activity)) : -1;
+  const total = activity.reduce((sum, v) => sum + v, 0);
+  if (!n || total <= 1e-9 || peak < 0) {
+    return { first: -1, last: -1, peak: -1, startS: 0, endS: 0, durationS: 0 };
+  }
+  const startAt = total * 0.02;
+  const endAt = total * 0.98;
+  let acc = 0;
   let first = -1;
   let last = -1;
-  if (top > floor) {
-    activity.forEach((v, i) => {
-      if (v > floor) {
-        if (first < 0) first = i;
-        last = i;
-      }
-    });
+  for (let i = 0; i < n; i++) {
+    acc += activity[i];
+    if (first < 0 && acc >= startAt) first = i;
+    if (acc <= endAt) last = i;
   }
-  const durationS = first < 0 ? 0 : round((last - first + 1) / fps, 3);
+  if (first < 0) first = peak;
+  if (last < first) last = first;
   return {
     first,
     last,
     peak,
-    startS: first < 0 ? 0 : round(first / fps, 3),
-    endS: first < 0 ? 0 : round(last / fps, 3),
-    durationS,
+    startS: round(first / fps, 3),
+    endS: round(last / fps, 3),
+    durationS: round((last - first + 1) / fps, 3),
   };
 }
 
@@ -274,9 +283,11 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
   if (cloneImgs[0].img.width !== size[0] || cloneImgs[0].img.height !== size[1]) {
     // A clone captured at another size is still comparable, but only after scaling: never let a
     // dimension mismatch turn into a "100% different" number.
-    rep.info(
-      `clone frames are ${cloneImgs[0].img.width}x${cloneImgs[0].img.height}, reference ${size[0]}x${size[1]}: rescaling clone frames`,
-    );
+    const note =
+      `clone frames were ${cloneImgs[0].img.width}x${cloneImgs[0].img.height} but the reference is ${size[0]}x${size[1]}; ` +
+      `the clone was rescaled to compare, so edge pixels are resampled`;
+    rep.info(note);
+    setupWarnings.push(note);
     tmpScaled = mkdtempSync(join(tmpdir(), "refilm-compare-"));
     const scaledPaths = cloneFiles.map((p, i) => {
       const dest = join(tmpScaled!, `${pad(i)}.png`);

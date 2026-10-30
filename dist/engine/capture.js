@@ -322,6 +322,8 @@ export async function capturePage(opts, hooks = {}) {
                 await runTrigger(page, opts);
             }
             await page.waitForTimeout(opts.duration / opts.playbackRate);
+            // the extraction below starts --pre-roll before the trigger, so that is the pre-roll that took effect
+            preRollMs = opts.preRoll;
             progress({ phase: "frames", detail: "cutting frames from the recording" });
         }
         else {
@@ -530,8 +532,8 @@ export async function capturePage(opts, hooks = {}) {
                     fps: opts.fps,
                     count: frameCount,
                     playbackRate: opts.playbackRate,
-                    preRollMs: opts.preRoll,
-                    triggerFrame: Math.round((opts.preRoll / 1000) * opts.fps),
+                    preRollMs,
+                    triggerFrame: Math.round((preRollMs / 1000) * opts.fps),
                     clip: clip ?? null,
                     viewport: opts.viewport,
                     scale: opts.scale,

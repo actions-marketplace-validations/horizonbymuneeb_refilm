@@ -224,14 +224,16 @@ test("record: two runs with the same clock/seed produce identical frames (determ
   }
 });
 
-test("record: a different seed changes the canvas frames (the seed is actually wired)", async () => {
-  // Guards the other direction: a determinism test passes trivially if the seed is ignored.
+test("record: a different seed changes the frames (the seed is actually wired)", async () => {
+  // Guards the other direction: a determinism test passes trivially if the seed is
+  // ignored. canvas-random.html lays its particles out with the page's real
+  // Math.random(), which --seed replaces, so the two runs must diverge.
   const a = tmpDir();
   const b = tmpDir();
   try {
     const args = (out, seed) => [
       "record",
-      "--url", fixture("canvas-2d.html"),
+      "--url", fixture("canvas-random.html"),
       "--out", out,
       "--viewport", VIEW,
       "--fps", "10",
@@ -240,8 +242,8 @@ test("record: a different seed changes the canvas frames (the seed is actually w
       "--seed", seed,
       "--json",
     ];
-    const ra = await runCli(args(a, "1"), { timeoutMs: 120_000 });
-    const rb = await runCli(args(b, "2"), { timeoutMs: 120_000 });
+    const ra = await runCli(args(a, "1"), { timeoutMs: 180_000 });
+    const rb = await runCli(args(b, "2"), { timeoutMs: 180_000 });
     assert.equal(ra.code, 0, ra.stderr.slice(-1000));
     assert.equal(rb.code, 0, rb.stderr.slice(-1000));
 

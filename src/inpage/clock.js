@@ -40,17 +40,25 @@
   const timelineDesc =
     root.AnimationTimeline && Object.getOwnPropertyDescriptor(AnimationTimeline.prototype, "currentTime");
 
+  // The virtual clock counts integer microseconds from a fixed origin of 0. Floats are what made this
+  // nondeterministic: a fractional rAF grid anchored on the wall clock meant step(100) ran 5 or 6 callbacks
+  // depending on the phase of that anchor, so the same capture drew a frame one rAF early or late. With an
+  // integer base and an integer tick, "how many animation frames fall inside step(ms)" is a pure function of
+  // ms, and frame k is exactly the state at t = k/fps on every run.
+  const HZ = cfg.hz || 60;
+  const TICK_US = Math.round(1e6 / HZ); // exact microseconds per virtual animation frame
   const st = {
     held: false,
-    t: 0,
-    skew: nat.epoch() - nat.now(),
+    us: 0, // virtual time, integer microseconds, origin 0
+    skew: nat.epoch() - nat.now(), // wall clock -> Date mapping (only used before the clock is held)
+    heldAtEpoch: 0, // Date.now() value the virtual origin corresponds to
     ids: 1,
     seq: 0,
     depth: 0,
     timers: new Map(),
     frames: new Map(),
-    tick: 1000 / (cfg.hz || 60),
-    nextTick: 0,
+    tick: 1000 / HZ, // milliseconds per animation frame, for display only
+    nextTickUs: 0,
     anims: new Map(),
     videos: new Map(),
     frameNo: 0,
@@ -58,7 +66,9 @@
     keeper: 0,
     log: [],
   };
-  const clockNow = () => (st.held ? st.t : nat.now());
+  const clockNow = () => (st.held ? st.us / 1000 : nat.now());
+  /** Now in integer microseconds: virtual once held, wall clock before that. */
+  const nowUs = () => (st.held ? st.us : Math.round(nat.now() * 1000));
 
   function invoke(cb, args) {
     try {
@@ -75,7 +85,7 @@
   function arm(timer) {
     timer.native = nat.timeout(function () {
       if (st.timers.get(timer.id) === timer && !st.held) fire(timer);
-    }, Math.max(0, timer.due - nat.now()));
+    }, Math.max(0, Math.round(timer.dueUs / 1000) - nat.now()));
   }
 
   function addTimer(cb, delay, args, repeat) {
@@ -85,7 +95,7 @@
     // browsers clamp: intervals to 1 ms, deeply nested timers to 4 ms
     if (depth > 5) ms = Math.max(ms, 4);
     else if (repeat) ms = Math.max(ms, 1);
-    const timer = { id, cb, args, delay: ms, repeat, due: clockNow() + ms, seq: st.seq++, depth, native: null };
+    const timer = { id, cb, args, delay: ms, repeat, dueUs: nowUs() + Math.round(ms * 1000), seq: st.seq++, depth, native: null };
     st.timers.set(id, timer);
     if (!st.held) arm(timer);
     return id;
@@ -93,7 +103,9 @@
 
   function fire(timer) {
     if (timer.repeat) {
-      timer.due = (st.held ? timer.due : nat.now()) + timer.delay;
+      // an interval keeps its cadence: the next firing is one delay after the previous due time, never a
+      // drift-free catch-up from "now", which would make the sequence depend on how late we ran it
+      timer.dueUs = timer.dueUs + Math.round(timer.delay * 1000);
       timer.seq = st.seq++;
       if (!st.held) arm(timer);
     } else st.timers.delete(timer.id);
@@ -184,7 +196,7 @@
       let rec = st.anims.get(a);
       if (!rec || a.playState === "running") {
         if (!rec && a.playState !== "running") continue; // paused or finished by the page itself
-        rec = { base: a.currentTime || 0, from: st.t };
+        rec = { base: a.currentTime || 0, from: st.us / 1000 };
         st.anims.set(a, rec);
         try {
           a.pause();
@@ -194,7 +206,7 @@
       }
       if (!st.held) continue;
       const rate = a.playbackRate || 1;
-      const at = rec.base + (st.t - rec.from) * rate;
+      const at = rec.base + (st.us / 1000 - rec.from) * rate;
       let end = Infinity;
       try {
         end = a.effect ? a.effect.getComputedTiming().endTime : Infinity;
@@ -224,14 +236,14 @@
       let rec = st.videos.get(v);
       if (!rec) {
         if (v.paused) continue;
-        rec = { base: v.currentTime, from: st.t };
+        rec = { base: v.currentTime, from: st.us / 1000 };
         st.videos.set(v, rec);
         try {
           v.pause();
         } catch (e) {}
       }
       if (!st.held) continue;
-      let at = rec.base + ((st.t - rec.from) / 1000) * (v.playbackRate || 1);
+      let at = rec.base + ((st.us / 1000 - rec.from) / 1000) * (v.playbackRate || 1);
       if (v.loop && v.duration > 0) at %= v.duration;
       else if (v.duration > 0) at = Math.min(at, v.duration);
       if (Math.abs(v.currentTime - at) > 0.001) {
@@ -257,12 +269,12 @@
 
   function FilmDate() {
     const args = Array.prototype.slice.call(arguments);
-    if (!new.target) return new nat.Date(st.skew + clockNow()).toString();
-    return args.length ? new nat.Date(...args) : new nat.Date(st.held ? st.skew + st.t : nat.epoch());
+    if (!new.target) return new nat.Date(nat.epoch()).toString();
+    return args.length ? new nat.Date(...args) : new nat.Date(st.held ? st.heldAtEpoch + st.us / 1000 : nat.epoch());
   }
   FilmDate.prototype = nat.Date.prototype;
   FilmDate.now = function now() {
-    return st.held ? Math.round(st.skew + st.t) : nat.epoch();
+    return st.held ? Math.round(st.heldAtEpoch + st.us / 1000) : nat.epoch();
   };
   FilmDate.parse = nat.Date.parse;
   FilmDate.UTC = nat.Date.UTC;
@@ -276,7 +288,7 @@
       Object.defineProperty(Event.prototype, "timeStamp", {
         configurable: true,
         get() {
-          return st.held ? st.t : stampDesc.get.call(this);
+          return st.held ? st.us / 1000 : stampDesc.get.call(this);
         },
       });
     } catch (e) {}
@@ -286,7 +298,7 @@
       Object.defineProperty(AnimationTimeline.prototype, "currentTime", {
         configurable: true,
         get() {
-          return st.held && this === document.timeline ? st.t : timelineDesc.get.call(this);
+          return st.held && this === document.timeline ? st.us / 1000 : timelineDesc.get.call(this);
         },
       });
     } catch (e) {}
@@ -338,11 +350,18 @@
     });
 
   function hold() {
-    if (st.held) return st.t;
-    st.t = nat.now();
+    if (st.held) return st.us / 1000;
+    // Take over from the wall clock at the fixed origin 0. Pending timers were queued against wall-clock
+    // microseconds, so each one is rebased: it keeps the delay it was asked for, measured from the origin.
+    // (Rebasing is what the obvious "just set t = 0" patch misses: without it, every pending timer is due
+    //  millions of milliseconds in the future and step() never reaches it — the hang.)
+    const wallUs = Math.round(nat.now() * 1000);
     st.held = true;
-    st.nextTick = st.t + st.tick;
+    st.us = 0;
+    st.heldAtEpoch = st.skew + wallUs / 1000;
+    st.nextTickUs = TICK_US;
     for (const timer of st.timers.values()) {
+      timer.dueUs = Math.max(0, timer.dueUs - wallUs);
       if (timer.native !== null) {
         nat.clearTimeout(timer.native);
         timer.native = null;
@@ -356,37 +375,37 @@
     }
     syncAnimations();
     keeper();
-    return st.t;
+    return 0;
   }
 
   async function step(ms) {
     if (!st.held) hold();
-    if (st.startedAt === null) st.startedAt = st.t;
+    if (st.startedAt === null) st.startedAt = st.us;
     nat.cancelFrame(st.keeper);
-    const target = st.t + Math.max(0, ms);
+    const targetUs = st.us + Math.round(Math.max(0, ms) * 1000);
     for (let guard = 0; guard < 200000; guard++) {
       let soonest = null;
       for (const timer of st.timers.values()) {
-        if (!soonest || timer.due < soonest.due || (timer.due === soonest.due && timer.seq < soonest.seq)) soonest = timer;
+        if (!soonest || timer.dueUs < soonest.dueUs || (timer.dueUs === soonest.dueUs && timer.seq < soonest.seq)) soonest = timer;
       }
-      const nextAt = Math.min(soonest ? soonest.due : Infinity, st.nextTick);
-      if (nextAt > target) break;
-      if (soonest && soonest.due <= st.nextTick) {
-        st.t = Math.max(st.t, soonest.due);
+      const nextAtUs = Math.min(soonest ? soonest.dueUs : Infinity, st.nextTickUs);
+      if (nextAtUs > targetUs) break;
+      if (soonest && soonest.dueUs <= st.nextTickUs) {
+        st.us = Math.max(st.us, soonest.dueUs);
         fire(soonest);
       } else {
-        st.t = st.nextTick;
-        st.nextTick += st.tick;
-        runFrame(st.t);
+        st.us = st.nextTickUs;
+        st.nextTickUs += TICK_US;
+        runFrame(st.us / 1000);
       }
       await breathe();
     }
-    st.t = target;
+    st.us = targetUs;
     syncAnimations();
     syncVideos();
     keeper();
-    if (st.log.length < 20000) st.log.push([nat.now(), st.t]);
-    return st.t;
+    if (st.log.length < 20000) st.log.push([nat.now(), st.us / 1000]);
+    return st.us / 1000;
   }
 
   /**
@@ -418,7 +437,7 @@
     history: () => st.log,
     state: () => ({
       held: st.held,
-      t: st.t,
+      t: st.us / 1000,
       timers: st.timers.size,
       frames: st.frames.size,
       frameNo: st.frameNo,

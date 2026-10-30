@@ -164,6 +164,8 @@ function easingFamilyOf(easing: string | null): EasingFamily {
 
 interface AnimGroup {
   key: string;
+  /** The shared element identity (`div.card`), used for the row's stagger group. */
+  identity: string;
   items: Array<{ anim: InspectAnimation; index: number }>;
 }
 
@@ -172,25 +174,49 @@ interface AnimGroup {
  * order is taken from the declared delay: the first sibling starts first. When a capture
  * tracks the elements themselves, the caller can check this against real geometry.
  */
+/**
+ * The identity two sibling elements share. `div#card-1.card` and `div#card-2.card` are the same
+ * kind of thing animating on a stagger, and their *shared* identity is `div.card`; grouping on
+ * the unique selector would make every card its own group of one and lose the stagger entirely.
+ * Falls back to parent + tag when siblings share no class, and to the bare tag when the parent
+ * is unknown.
+ */
+export function sharedIdentity(anim: InspectAnimation, nodeCounts: Map<string, number>): string {
+  const target = anim.target ?? "(unknown)";
+  const tag = /^([a-zA-Z][a-zA-Z0-9-]*)/.exec(target)?.[1] ?? target;
+  const classes = (target.match(/\.([A-Za-z0-9_-]+)/g) ?? []).map((c) => c.slice(1));
+  const parent = anim.targetPath ? anim.targetPath.split(">")[0].trim() : "";
+  // Prefer the class set, because that is what a sibling list shares in practice.
+  if (classes.length) {
+    const byClass = `${tag}.${classes.join(".")}`;
+    if (nodeCounts.has(byClass) || nodeCounts.size === 0) return byClass;
+    return byClass;
+  }
+  if (parent) return `${parent} > ${tag}`;
+  return tag;
+}
+
 function groupAnimations(animations: InspectAnimation[], nodeCounts: Map<string, number>): AnimGroup[] {
   const byKey = new Map<string, InspectAnimation[]>();
   for (const anim of animations) {
-    const target = anim.target ?? "(unknown)";
     const name = anim.name ?? "";
     const duration = ms(anim.timing?.duration, 0);
-    const key = `${target}|${name}|${Math.round(duration)}`;
+    const identity = sharedIdentity(anim, nodeCounts);
+    const key = `${identity}|${name}|${Math.round(duration)}`;
     const list = byKey.get(key) ?? [];
     list.push(anim);
     byKey.set(key, list);
   }
   const groups: AnimGroup[] = [];
   for (const [key, list] of byKey) {
+    // Sibling order is the declared delay order: that is the only ordering the evidence has.
     const ordered = [...list].sort((a, b) => ms(a.timing?.delay, 0) - ms(b.timing?.delay, 0));
-    const tag = ordered[0]?.target ?? "(unknown)";
-    const declared = nodeCounts.get(tag) ?? 0;
+    const identity = key.split("|")[0] ?? "(unknown)";
+    const declared = nodeCounts.get(identity) ?? 0;
     const useIndex = ordered.length > 1 && declared !== 1;
     groups.push({
       key,
+      identity,
       items: ordered.map((anim, i) => ({ anim, index: useIndex ? i : 0 })),
     });
   }
@@ -259,8 +285,7 @@ export function deriveFromInspect(inspect: InspectFile, opts: { fps: number } = 
   const usedAnimations = new Set<InspectAnimation>();
 
   for (const group of groups) {
-    const { items } = group;
-    const baseTag = items[0]?.anim.target ?? "(unknown)";
+    const { items, identity: baseTag } = group;
     const declaredSiblings = nodeCounts.get(baseTag) ?? 0;
     if (items.length > 1 && declaredSiblings > 0 && items.length !== declaredSiblings) {
       notes.push(
@@ -279,7 +304,10 @@ export function deriveFromInspect(inspect: InspectFile, opts: { fps: number } = 
       const iterations = Number.isFinite(Number(timing.iterations)) ? Number(timing.iterations) : 1;
       const direction = (timing.direction ?? "normal").toString();
       const fill = (timing.fill ?? "none").toString();
-      const element = elementLabel(baseTag, items.length > 1 ? index : undefined);
+      // The row keeps the element's own identity (the unique selector when the page has one);
+      // only the *group* uses the shared identity, so the stagger is measured across siblings.
+      const targetCount = animations.filter((a) => (a.target ?? "(unknown)") === (anim.target ?? "(unknown)")).length;
+      const element = targetCount > 1 ? elementLabel(anim.target ?? baseTag, index) : (anim.target ?? baseTag);
       const kfs = (anim.keyframes ?? []).filter((k) => k && typeof k === "object");
 
       if (!kfs.length) {

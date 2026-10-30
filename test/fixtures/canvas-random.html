@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>canvas-random fixture</title>
+<!--
+  EXPECTED VALUES — the "is --seed actually wired" fixture
+  ----------------------------------------------------------------
+  Unlike canvas-2d.html (which carries its own fixed PRNG so it is deterministic
+  no matter what), this page uses the page's real Math.random() to lay out its
+  particles. refilm's --seed replaces Math.random with a seeded generator before
+  any page script runs, so:
+
+    same --seed, --clock virtual  -> identical frames
+    different --seed              -> different frames
+
+  That second property is what makes it a useful control: a determinism test
+  passes trivially if --seed is silently ignored, and this page would catch it.
+
+    particles : 40, positions from Math.random() once at load
+    motion    : orbit angle from performance.now(), same shape as canvas-2d
+    canvas    : 640x480
+-->
+<style>
+  html, body { margin: 0; padding: 0; background: #11151f; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+  <canvas id="c" width="640" height="480" data-anim="canvas-random"></canvas>
+  <script>
+    (function () {
+      const c = document.getElementById("c");
+      const ctx = c.getContext("2d", { alpha: false });
+      const W = c.width, H = c.height;
+
+      // Deliberately Math.random(): the layout depends on whatever generator
+      // refilm installed via --seed.
+      const N = 40;
+      const dots = [];
+      for (let i = 0; i < N; i++) {
+        dots.push({
+          cx: Math.random() * W,
+          cy: Math.random() * H,
+          radius: 20 + Math.random() * 60,
+          phase: Math.random() * Math.PI * 2,
+          size: 3 + Math.random() * 6,
+          hue: Math.round(Math.random() * 360),
+        });
+      }
+
+      const START = performance.now();
+
+      function draw(t) {
+        ctx.fillStyle = "#11151f";
+        ctx.fillRect(0, 0, W, H);
+        for (const d of dots) {
+          const a = d.phase + t * 0.001;
+          const x = Math.round(d.cx + Math.cos(a) * d.radius);
+          const y = Math.round(d.cy + Math.sin(a) * d.radius);
+          ctx.beginPath();
+          ctx.fillStyle = "hsl(" + d.hue + " 75% 62%)";
+          ctx.arc(x, y, d.size, 0, Math.PI * 2, false);
+          ctx.fill();
+        }
+      }
+
+      function loop() {
+        draw(performance.now() - START);
+        requestAnimationFrame(loop);
+      }
+      draw(0);
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

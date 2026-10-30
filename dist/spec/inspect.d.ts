@@ -95,6 +95,19 @@ export declare function transformChannels(from: string, to: string): Array<{
     from: number;
     to: number;
 }>;
+/**
+ * Animations that target the same tag and share a name are siblings of one effect. Their
+ * order is taken from the declared delay: the first sibling starts first. When a capture
+ * tracks the elements themselves, the caller can check this against real geometry.
+ */
+/**
+ * The identity two sibling elements share. `div#card-1.card` and `div#card-2.card` are the same
+ * kind of thing animating on a stagger, and their *shared* identity is `div.card`; grouping on
+ * the unique selector would make every card its own group of one and lose the stagger entirely.
+ * Falls back to parent + tag when siblings share no class, and to the bare tag when the parent
+ * is unknown.
+ */
+export declare function sharedIdentity(anim: InspectAnimation, nodeCounts: Map<string, number>): string;
 export declare function deriveFromInspect(inspect: InspectFile, opts?: {
     fps: number;
 }): InspectDerivation;
