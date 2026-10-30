@@ -19,7 +19,7 @@
 <header class="topbar">
   <a class="topbar__brand" href="../index.html">
     <span class="topbar__name">refilm</span>
-    <span class="topbar__version">v0.1.2</span>
+    <span class="topbar__version">v0.1.3</span>
   </a>
   <nav class="topbar__nav" aria-label="Project links">
     <a href="../site/getting-started.html">Docs</a>
@@ -90,6 +90,69 @@
     <code>in-page script clock.js not found</code>. Upgrade to 0.1.2.
   </p>
 </div>
+
+<article class="release">
+  <div class="release__head">
+    <span class="release__ver">0.1.3</span>
+    <span class="release__date">2026-10-30</span>
+    <span class="tag">docs · infrastructure</span>
+  </div>
+
+  <p>Documentation and project-infrastructure release. No code changes to the CLI.</p>
+
+  <h3><span class="tag tag--added">Added</span></h3>
+
+  <ul>
+    <li>
+      <strong>Documentation site</strong> at
+      <a href="https://horizonbymuneeb.github.io/refilm/">horizonbymuneeb.github.io/refilm</a> —
+      22 pages: getting started, the workflow in depth, a page per command with every flag,
+      canvas/3D, determinism, agents, fidelity levels, reading a compare report, and this changelog.
+      Plain static HTML with no dependencies and no network at runtime, light and dark themes,
+      deployed by GitHub Pages.
+    </li>
+    <li>
+      <strong><code>CONTRIBUTING.md</code>, <code>CODE_OF_CONDUCT.md</code>, <code>SECURITY.md</code></strong>
+      — how to set up, the rules the project actually enforces (a check that cannot be measured is
+      <code>skip</code>, never <code>pass</code>; a threshold is never relaxed to go green), and how
+      to report a vulnerability privately.
+    </li>
+    <li>
+      <strong>Issue templates</strong> for bugs, feature requests and bad captures, plus a pull
+      request template that asks for the evidence a reviewer needs.
+    </li>
+    <li>
+      <strong><code>publish.yml</code></strong> — tag-driven npm publishing with a tag /
+      <code>package.json</code> match check, <code>verify:dist</code>, tests, npm provenance, and
+      automatic GitHub Release creation.
+    </li>
+    <li>
+      <strong><code>pages.yml</code></strong> — deploys <code>docs/</code> to GitHub Pages and fails
+      if any local asset reference is missing.
+    </li>
+  </ul>
+
+  <h3><span class="tag tag--fixed">Fixed</span></h3>
+
+  <ul>
+    <li>
+      <strong>The README did not render its images on npm.</strong> Relative paths like
+      <code>docs/media/x.png</code> resolve to <code>npmjs.com/package/refilm/docs/media/x.png</code>,
+      which 403s; every image is now an absolute <code>raw.githubusercontent.com</code> URL, and a
+      packaging test fails if a relative one reappears.
+    </li>
+    <li>
+      <strong>CI was red on Node 20 and 22</strong> because <code>ubuntu-latest</code> ships no
+      <code>ffmpeg</code> and Playwright's bundled copy is not on <code>PATH</code>. Every capture
+      produced zero frames, so the frame, compare, report and packaging tests failed. CI now
+      installs ffmpeg before building.
+    </li>
+    <li>
+      <code>ci.yml</code> runs <code>npm run verify:dist</code>, so a packaging regression cannot
+      merge.
+    </li>
+  </ul>
+</article>
 
 <article class="release">
   <div class="release__head">
@@ -267,7 +330,7 @@
 
 <footer class="footer">
   <div class="footer__in">
-    <span>refilm 0.1.2 · MIT</span>
+    <span>refilm 0.1.3 · MIT</span>
     <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
     <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
     <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>

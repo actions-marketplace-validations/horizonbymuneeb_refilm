@@ -524,6 +524,19 @@ code {
   border: var(--hair) solid var(--line);
   border-radius: var(--r1);
   padding: 0.5px 4px;
+  /* an inline code token can be a long path or URL with nothing to break on.
+     Inline code must wrap; block code keeps its own scroll container. */
+  overflow-wrap: break-word;
+}
+
+/* inside a paragraph or list item an inline code token may break anywhere
+   rather than push the page wider than the viewport */
+p code,
+li code,
+td code,
+figcaption code,
+.callout code {
+  word-break: break-word;
 }
 
 pre {
