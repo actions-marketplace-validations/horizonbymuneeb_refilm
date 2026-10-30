@@ -308,7 +308,6 @@ export interface FitOptions {
   maxDurationFactor?: number;
 }
 
-const clamp01 = (t: number) => (t < 0 ? 0 : t > 1 ? 1 : t);
 const round3 = (n: number, digits = 3) => Number(n.toFixed(digits));
 
 /**

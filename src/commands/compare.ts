@@ -163,34 +163,34 @@ const round = (n: number, digits = 4) => Number(n.toFixed(digits));
 /**
  * Frames where the animation is actually moving.
  *
- * The window is the span of frames whose own change clears a floor above the capture's background
- * noise. The floor matters more than it looks: too high and the long tail of a slow ease-out is cut
- * off (which hides a clone that is 300ms too slow), too low and grain keeps the window open to the
- * last frame. So the floor is derived from the data: the median per-frame change is the background,
- * and a frame counts as moving at four times that. A small relative term keeps the rule meaningful
- * for very large or very small captures.
+ * The obvious rule — "a frame is moving if its own change clears a fixed floor" — is the wrong one.
+ * Any floor high enough to keep grain out of a still scene also truncates the long tail of a slow
+ * ease-out, and that tail is exactly what separates a 900ms clone from a 1200ms one. So the window
+ * is read off the cumulative curve instead: motion starts once 5% of all the change in the
+ * recording has happened and ends at 95%. That is scale-free — grain, blur and pixel size add a
+ * constant to every frame and cancel out of the ratio — and it stretches when the clone is slower,
+ * which is the measurement the timing gate depends on.
+ *
+ * The consequence to know about: the window is a visible-motion window, not the declared CSS
+ * duration. A tail-heavy curve finishes early by this measure, so compare it against the same
+ * measure on the other side, never against a duration read off the stylesheet.
  */
 function motionWindow(activity: number[], fps: number): MotionWindow {
   const n = activity.length;
   const peak = n ? activity.indexOf(Math.max(...activity)) : -1;
   const total = activity.reduce((sum, v) => sum + v, 0);
-  if (!n || total <= 1e-9 || peak < 0) {
+  if (!n || peak < 0 || total <= 1e-9) {
     return { first: -1, last: -1, peak: -1, startS: 0, endS: 0, durationS: 0 };
   }
-  // Constant background change (grain, resampling shimmer, a blinking cursor) is present in every
-  // frame, so it is estimated as the median change and the floor sits above it. The floor also
-  // carries a small relative term, so the same rule reads a 4K capture and a 320px capture alike.
-  const sorted = [...activity].sort((a, b) => a - b);
-  const background = sorted[Math.floor(sorted.length / 2)] ?? 0;
-  const peakValue = activity[peak] ?? 0;
-  const floor = Math.max(0.0005, background * 4, peakValue * 0.01);
+  const startAt = total * 0.05;
+  const endAt = total * 0.95;
+  let acc = 0;
   let first = -1;
   let last = -1;
   for (let i = 0; i < n; i++) {
-    if (activity[i] >= floor) {
-      if (first < 0) first = i;
-      last = i;
-    }
+    acc += activity[i];
+    if (first < 0 && acc >= startAt) first = i;
+    if (acc <= endAt) last = i;
   }
   if (first < 0) first = peak;
   if (last < first) last = first;

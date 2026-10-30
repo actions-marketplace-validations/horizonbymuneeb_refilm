@@ -34,7 +34,8 @@ test("spec: rows are present, declared, and carry the fixture's real numbers", a
   const out = tmpDir();
   try {
     await captureFadeUp(cap);
-    const res = await runCli(["spec", "--capture", cap, "--out", out, "--json"], { timeoutMs: 120_000 });
+    const specPath = join(out, "spec.json");
+    const res = await runCli(["spec", "--capture", cap, "--out", specPath, "--json"], { timeoutMs: 120_000 });
     assert.equal(res.code, 0, `spec should succeed:\n${res.stderr.slice(-2000)}`);
 
     const env = parseEnvelope(res, "spec");
@@ -114,7 +115,6 @@ test("spec: rows are present, declared, and carry the fixture's real numbers", a
     assert.ok(Math.abs(s.totalMs - 1140) <= 30, `totalMs should be ~1140, got ${s.totalMs}`);
 
     // ---- artifacts
-    const specPath = join(out, "spec.json");
     assert.ok(existsSync(specPath), "spec must write spec.json");
     const onDisk = JSON.parse(readFileSync(specPath, "utf8"));
     assert.equal(onDisk.kind, "spec");
@@ -130,9 +130,10 @@ test("spec: --frames builds rows from a video when there is no DOM", async () =>
   // element identity cannot be known from pixels.
   const out = tmpDir();
   try {
-    const res = await runCli(["spec", "--frames", fixture("clip.mp4"), "--out", out, "--json"], {
-      timeoutMs: 120_000,
-    });
+    const res = await runCli(
+      ["spec", "--frames", fixture("clip.mp4"), "--out", join(out, "spec.json"), "--json"],
+      { timeoutMs: 120_000 },
+    );
     assert.equal(res.code, 0, `spec --frames should succeed:\n${res.stderr.slice(-2000)}`);
     const s = parseEnvelope(res, "spec --frames").data.spec;
     assert.equal(s.kind, "spec");
@@ -149,7 +150,7 @@ test("spec: --frames builds rows from a video when there is no DOM", async () =>
 test("spec: no input is a usage error with exit 2", async () => {
   const out = tmpDir();
   try {
-    const res = await runCli(["spec", "--out", out, "--json"], { timeoutMs: 60_000 });
+    const res = await runCli(["spec", "--out", join(out, "spec.json"), "--json"], { timeoutMs: 60_000 });
     assert.equal(res.code, 2);
     const env = parseEnvelope(res, "spec no input");
     assert.equal(env.ok, false);
@@ -162,14 +163,47 @@ test("spec: no input is a usage error with exit 2", async () => {
 test("spec: a capture directory that does not exist is a usage error", async () => {
   const out = tmpDir();
   try {
-    const res = await runCli(["spec", "--capture", "/nonexistent/capture", "--out", out, "--json"], {
-      timeoutMs: 60_000,
-    });
+    const res = await runCli(
+      ["spec", "--capture", "/nonexistent/capture", "--out", join(out, "spec.json"), "--json"],
+      { timeoutMs: 60_000 },
+    );
     assert.equal(res.code, 2, `expected exit 2, got ${res.code}`);
     const env = parseEnvelope(res, "spec missing capture");
     assert.equal(env.ok, false);
     assert.equal(env.errors[0].code, "USAGE");
   } finally {
+    cleanup(out);
+  }
+});
+
+// BUG #4 (reported to the Lead, authoring owns the fix): spec treats --out as a FILE
+// path, while every other command treats --out as a directory. Writing to an existing
+// directory therefore dies with EISDIR and, worse, reports it as INTERNAL (exit 4),
+// which reads as "refilm is broken" rather than "wrong argument shape".
+// This test encodes the intended contract so the fix is verified, not assumed.
+test("spec: --out pointing at an existing directory writes <out>/spec.json", async () => {
+  const cap = tmpDir();
+  const out = tmpDir(); // already exists — this is the failing case
+  try {
+    await captureFadeUp(cap);
+    const res = await runCli(["spec", "--capture", cap, "--out", out, "--json"], { timeoutMs: 120_000 });
+
+    assert.notEqual(
+      res.code,
+      4,
+      `spec --out <existing dir> returned INTERNAL (exit 4); that code means refilm itself is broken. ` +
+        `stdout: ${res.stdout.slice(0, 400)}`,
+    );
+    assert.equal(res.code, 0, `spec --out <dir> should succeed:\n${res.stdout.slice(0, 800)}`);
+    assert.ok(existsSync(join(out, "spec.json")), "--out <dir> must write <dir>/spec.json");
+
+    const env = parseEnvelope(res, "spec --out dir");
+    assert.equal(env.ok, true);
+    const onDisk = JSON.parse(readFileSync(join(out, "spec.json"), "utf8"));
+    assert.equal(onDisk.kind, "spec");
+    assert.ok(onDisk.rows.length > 0);
+  } finally {
+    cleanup(cap);
     cleanup(out);
   }
 });

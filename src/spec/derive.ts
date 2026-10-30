@@ -153,10 +153,20 @@ export function deriveSpec(evidence: Evidence, opts: DeriveOptions): DerivedSpec
   // a fitted duplicate of every property, and mixing sources inside one row would be a lie
   // about where the number came from.
   const bestRank = collected.reduce((m, c) => Math.max(m, c.rank), 0);
+  const strongest = collected.find((c) => c.rank === bestRank)?.row.source ?? "unknown";
   const chosen: RawRow[] = [];
   for (const c of collected) {
-    if (c.rank === bestRank) chosen.push(c.row);
-    else merged.push(`${c.row.element}.${c.row.property} (${c.row.source}) — superseded by a ${bestRank >= 3 ? "declared/fitted" : "stronger"} source`);
+    if (c.rank === bestRank) {
+      chosen.push(c.row);
+      continue;
+    }
+    // Pixel regions are not "superseded" by element rows — they describe different things. Say
+    // which is which, because an agent reading the payload needs to know what was dropped.
+    const why =
+      c.row.source === "frames"
+        ? `pixel regions are coarser than ${strongest} element rows, so they are reported here rather than as duplicate rows`
+        : `superseded by ${strongest}, which measures the same property more precisely`;
+    merged.push(`${c.row.element}.${c.row.property} (${c.row.source}) — ${why}`);
   }
 
   // ---- corroboration: the track can only add notes here, never move a declared number
@@ -233,13 +243,15 @@ export function deriveSpec(evidence: Evidence, opts: DeriveOptions): DerivedSpec
       "no track.json: travel distance, overshoot and the easing shape were not measured — only the declared keyframe values are known",
     );
   }
-  if (hasFrames && !hasInspect && !hasTrack) {
+  if (hasFrames && !hasInspect && !hasTrack && !hasGl && !evidence.lottie) {
     unresolved.push(
       "pixel-only evidence: which element owns each region, the CSS property, the travel distance and the direction are all unknown — this spec cannot be implemented without a capture that has a DOM",
     );
   }
+  // A Lottie file carries no web fonts: text inside it is outlined or font-referenced by the
+  // player, so a missing font list there is not a gap in the evidence.
   const fonts = evidence.capture?.fonts ?? [];
-  if (!fonts.length) {
+  if (!fonts.length && !evidence.lottie) {
     unresolved.push("no fonts recorded in the capture: font family, weight and rendering are unverified, which pixel fidelity cannot survive");
   }
   const viewport = evidence.capture?.viewport;

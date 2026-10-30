@@ -102,10 +102,35 @@ export function deriveFromGlTrack(track: GlTrack, opts: { fps?: number } = {}): 
     return { rows, notes, facts, channels: [] };
   }
 
-  const clockChannels: string[] = [];
+  // A model-view or normal matrix element is a *consequence* of the object's transform: emitting
+  // one row per matrix element buries the three rows that matter (rotation, position, colour) in
+  // a dozen that only say "the same object moved". When the trace also carries scene-graph
+  // channels for that object, the matrix rows are dropped and reported as derived.
+  const hasSceneGraph = (prefix: string) =>
+    fits.some((f) => f.name.startsWith(prefix) && !/Matrix/.test(f.name) && !/\.emissive|\.color/.test(f.name));
   const derivedChannels: string[] = [];
-
+  const matrixOnly: string[] = [];
+  const kept: GlChannelFit[] = [];
   for (const ch of fits) {
+    if (/Matrix/.test(ch.name)) {
+      const prefix = ch.name.split(".")[0] ?? "";
+      if (hasSceneGraph(prefix) || hasSceneGraph("three:")) {
+        matrixOnly.push(ch.name);
+        continue;
+      }
+    }
+    kept.push(ch);
+  }
+  if (matrixOnly.length) {
+    notes.push(
+      `${matrixOnly.length} matrix channel(s) were not emitted as rows: they are the same object transform seen through a matrix, and the object's own rotation/position rows describe it directly`,
+    );
+    facts["gl.derivedMatrixChannels"] = matrixOnly.length;
+  }
+
+  const clockChannels: string[] = [];
+
+  for (const ch of kept) {
     const best = ch.fit.bestFits[0];
     const rate = clockRate(ch);
     const rowNotes: string[] = [];
@@ -114,12 +139,13 @@ export function deriveFromGlTrack(track: GlTrack, opts: { fps?: number } = {}): 
       clockChannels.push(`${ch.name} (${rate >= 0 ? "+" : ""}${roundTo(rate, 6)}/ms)`);
       rowNotes.push(`linear in time at ${roundTo(rate, 6)} per ms: a clock, so the rate is the value to copy`);
     }
-    if (/Matrix/i.test(ch.name)) {
-      derivedChannels.push(ch.name);
-      rowNotes.push("a matrix element: it moves because the object moves, not on its own");
-    }
     if (ch.kind === "there-and-back" || ch.kind === "oscillation") {
       rowNotes.push(`the trace classifies this channel as ${ch.kind}: a cycle, not a one-shot tween`);
+    }
+    if (ch.fit.visibleDurationMs < 20) {
+      rowNotes.push(
+        `the fitted window is only ${Math.round(ch.fit.visibleDurationMs)} ms, shorter than one rendered frame at 60 fps: this channel oscillates and the window is noise, not a tween`,
+      );
     }
 
     rows.push({
@@ -133,7 +159,9 @@ export function deriveFromGlTrack(track: GlTrack, opts: { fps?: number } = {}): 
       easingFamily: rate !== null ? "linear" : best ? best.family : "unknown",
       overshoot: ch.fit.overshootPct > 0.5 ? roundTo(ch.fit.overshootPct, 2) : 0,
       source: "gl-track",
-      confidence: rate !== null || /Matrix/i.test(ch.name) ? "low" : best && best.rmse < 0.05 ? "medium" : "low",
+      // A clock rate is measured to a few parts per thousand, so it is resolved even though it
+      // is not a tween; the row still says "clock" so nobody keyframes it.
+      confidence: rate !== null ? "medium" : best && best.rmse < 0.05 ? "medium" : "low",
       group: `gl|${ch.name}`,
       note: rowNotes.length ? rowNotes.join("; ") : undefined,
     });
@@ -143,12 +171,6 @@ export function deriveFromGlTrack(track: GlTrack, opts: { fps?: number } = {}): 
     facts["gl.clockChannels"] = clockChannels.join(", ");
     notes.push(
       `${clockChannels.length} clock channel(s): ${clockChannels.join(", ")} — copy the rate into the clone's clock, do not keyframe the values`,
-    );
-  }
-  if (derivedChannels.length) {
-    facts["gl.derivedChannels"] = `${derivedChannels.length} matrix channel(s)`;
-    notes.push(
-      `${derivedChannels.length} row(s) come from matrix elements — copy the object's rotation/position, not the matrix numbers`,
     );
   }
   const moved = new Set(rows.map((r) => r.element));

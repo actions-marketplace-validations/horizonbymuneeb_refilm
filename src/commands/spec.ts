@@ -53,6 +53,17 @@ Writes <out>/spec.json, and <md> when --md is given. Exit 0 on success, 2 on a u
 
 const FIDELITIES: Fidelity[] = ["motion", "pixel", "mixed"];
 
+/**
+ * `--out` accepts both spellings, because every other refilm command takes a directory while a
+ * spec is naturally one file. An existing directory gets `spec.json` inside it; anything else is
+ * the file path itself. Both exit 0, so an agent that does `mkdir -p out && refilm spec --out out`
+ * is not punished for following the tool's own convention.
+ */
+function resolveOutPath(target: string): string {
+  if (isDir(target)) return join(target, "spec.json");
+  return target;
+}
+
 export async function run(argv: string[], ctx: { json: boolean }): Promise<number> {
   const rep = reporter("spec", { json: ctx.json });
   const args = parseArgs(argv);
@@ -83,6 +94,7 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
   // ---- gather evidence from every source given, in one place
   const inputs: Record<string, string> = {};
   const notes: string[] = [];
+  let extractedFrames: { dir: string; count: number; fps: number } | null = null;
   let evidence = {};
   let captureDir: string | null = null;
 
@@ -123,6 +135,8 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
       if (!media.durationS) {
         throw usageError(`--frames ${framesArg} could not be read as a video or gif`, "check the file plays: ffmpeg -i <file>");
       }
+      // The frames are evidence, so they outlive this process: a caller reading the JSON payload
+      // must be able to look at the exact frames the spec was derived from.
       const tmpDir = join(tmpdir(), `refilm-spec-frames-${process.pid}`);
       ensureDir(tmpDir);
       rep.info(`cutting ${basename(target)} at ${fps} fps into ${tmpDir}`);
@@ -133,8 +147,9 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
       evidence = { ...evidence, ...loaded.evidence };
       Object.assign(inputs, loaded.inputs);
       notes.push(
-        `${cut.length} frames were extracted from ${basename(target)} at ${fps} fps: the original recording's own frame rate is not the authored rate, so timing here is accurate to one extracted frame`,
+        `${cut.length} frames were extracted from ${basename(target)} at ${fps} fps into ${tmpDir}: the recording's own frame rate is not the authored rate, so timing here is accurate to one extracted frame`,
       );
+      extractedFrames = { dir: tmpDir, count: cut.length, fps };
       if (!captureDir) captureDir = tmpDir;
     } else {
       throw usageError(`--frames ${framesArg} does not exist`);
@@ -192,7 +207,7 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
   // ---- write
   const written: string[] = [];
   const outArg = str(args.out);
-  const outPath = outArg ? abs(outArg) : captureDir ? join(captureDir, "spec.json") : abs(`${name}.spec.json`);
+  const outPath = resolveOutPath(outArg ? abs(outArg) : captureDir ? join(captureDir, "spec.json") : abs(`${name}.spec.json`));
   ensureDir(join(outPath, ".."));
   writeJson(outPath, spec);
   written.push(outPath);
@@ -246,6 +261,8 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
     inputs,
     merged,
     notes,
+    // Present only when a video/gif had to be cut: the directory is kept, not cleaned up.
+    ...(extractedFrames ? { extractedFrames } : {}),
   });
 
   return EXIT.OK;

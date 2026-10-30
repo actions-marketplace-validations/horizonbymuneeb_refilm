@@ -356,7 +356,9 @@ function rowChecks(row: SpecRow, m: RowMeasurement, fps: number): VerifyCheck[] 
           "fail",
           distance === null ? `${refBest.family} → ${cloneBest.family}` : `${(distance * 100).toFixed(1)}% of travel`,
           `family ${refBest.family}, or ≤${EASING_LIMIT * 100}% of travel`,
-          `the clone's curve is ${cloneBest.name} where the reference is ${refBest.name}`,
+          FAMILY_CONFLICT(refBest.family, cloneBest.family)
+            ? `the clone is ${cloneBest.family} where the reference is ${refBest.family}: that is a different kind of motion, not a near miss (curve distance ${distance === null ? "unmeasurable" : `${(distance * 100).toFixed(1)}%`})`
+            : `the clone's curve is ${cloneBest.name} where the reference is ${refBest.name}`,
         ),
       );
     }

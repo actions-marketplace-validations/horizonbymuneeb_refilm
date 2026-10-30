@@ -57,14 +57,6 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
 
   // ffmpeg -i is the only probe: ffprobe is not assumed to be installed anywhere.
   const src = probeMedia(input);
-  const source = {
-    input,
-    durationS: src.durationS,
-    width: src.width,
-    height: src.height,
-    sourceFps: src.sourceFps,
-  };
-
   if (bool(args.probe)) {
     const info = {
       input,
