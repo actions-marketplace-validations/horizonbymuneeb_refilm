@@ -75,8 +75,22 @@ jobs:
       - name: Pack
         run: npm pack
 
-      - name: Publish to npm
+      # The secret is optional so a tag pushed before the token is configured does not leave a red
+      # build behind. When it is absent the job says so and skips, rather than failing on ENEEDAUTH.
+      - name: Check for the npm token
+        id: npm_token
         if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        run: |
+          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "::warning::NPM_TOKEN is not set on this repository, so the npm publish is skipped."
+            echo "::warning::Add it under Settings -> Secrets and variables -> Actions, then re-run this workflow."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to npm
+        if: steps.npm_token.outputs.present == 'true'
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
