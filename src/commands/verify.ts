@@ -349,12 +349,17 @@ function rowChecks(row: SpecRow, m: RowMeasurement, fps: number): VerifyCheck[] 
         ),
       );
     } else {
+      const conflict = FAMILY_CONFLICT(refBest.family, cloneBest.family);
       checks.push(
         check(
           `${row.id}.easing`,
           `${label} easing`,
           "fail",
-          distance === null ? `${refBest.family} → ${cloneBest.family}` : `${(distance * 100).toFixed(1)}% of travel`,
+          conflict
+            ? `${refBest.family} → ${cloneBest.family}`
+            : distance === null
+              ? `${refBest.family} → ${cloneBest.family}`
+              : `${(distance * 100).toFixed(1)}% of travel`,
           `family ${refBest.family}, or ≤${EASING_LIMIT * 100}% of travel`,
           FAMILY_CONFLICT(refBest.family, cloneBest.family)
             ? `the clone is ${cloneBest.family} where the reference is ${refBest.family}: that is a different kind of motion, not a near miss (curve distance ${distance === null ? "unmeasurable" : `${(distance * 100).toFixed(1)}%`})`
@@ -516,20 +521,26 @@ function pixelChecks(report: CompareReport, ref: DirEvidence, clone: DirEvidence
     ),
   );
 
-  const maxFrame = report.frameDetails.reduce(
-    (worst, f) => (f.mismatch > worst.mismatch ? f : worst),
-    { index: -1, t: 0, mismatch: 0, diffPixels: 0 },
-  );
-  checks.push(
-    check(
-      "pixel.maxFrame",
-      "worst frame",
-      maxFrame.mismatch <= PIXEL_FRAME_LIMIT ? "pass" : "fail",
-      `${(maxFrame.mismatch * 100).toFixed(2)}% @ frame ${maxFrame.index} (${maxFrame.t}s)`,
-      `≤${(PIXEL_FRAME_LIMIT * 100).toFixed(0)}%`,
-      "no single frame may exceed the limit, however good the average is",
-    ),
-  );
+  // Seed from the first compared frame, not a sentinel: with a perfect clone every mismatch is
+  // 0 and a strict ">" comparison would never replace a placeholder, reporting "frame -1".
+  const maxFrame =
+    report.frameDetails.length > 0
+      ? report.frameDetails.reduce((worst, f) => (f.mismatch > worst.mismatch ? f : worst), report.frameDetails[0])
+      : null;
+  if (!maxFrame) {
+    checks.push(skip("pixel.maxFrame", "worst frame", "no frames were compared (the two frame sets do not overlap)"));
+  } else {
+    checks.push(
+      check(
+        "pixel.maxFrame",
+        "worst frame",
+        maxFrame.mismatch <= PIXEL_FRAME_LIMIT ? "pass" : "fail",
+        `${(maxFrame.mismatch * 100).toFixed(2)}% @ frame ${maxFrame.index} (${maxFrame.t}s)`,
+        `≤${(PIXEL_FRAME_LIMIT * 100).toFixed(0)}%`,
+        "no single frame may exceed the limit, however good the average is",
+      ),
+    );
+  }
 
   // at rest: after the reference has finished moving, nothing should still differ
   const restFrom = report.motion.ref.endS;

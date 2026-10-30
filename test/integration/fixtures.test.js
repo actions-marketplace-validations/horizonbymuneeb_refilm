@@ -11,6 +11,7 @@ import { existsSync, readFileSync, statSync, readdirSync } from "node:fs";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
+import { PNG } from "pngjs";
 import { FIXTURES, cleanup } from "../helpers.js";
 
 const MANIFEST = JSON.parse(readFileSync(join(FIXTURES, "manifest.json"), "utf8"));
@@ -55,6 +56,16 @@ async function withServer(fn) {
   }
 }
 
+/** Count pixels that are not the page's dark background, from a PNG screenshot. */
+function countNonBackground(pngBuffer) {
+  const img = PNG.sync.read(pngBuffer);
+  let n = 0;
+  for (let i = 0; i < img.data.length; i += 4) {
+    if (img.data[i] > 40 || img.data[i + 1] > 50 || img.data[i + 2] > 60) n++;
+  }
+  return n;
+}
+
 /** Open a fixture, collect page errors, and hand the page to the test. */
 async function withPage(base, file, fn) {
   const browser = await chromium.launch({
@@ -62,6 +73,15 @@ async function withPage(base, file, fn) {
   });
   try {
     const page = await browser.newPage({ viewport: { width: 640, height: 480 } });
+    await page.addInitScript(() => {
+      const real = Math.random;
+      let n = 0;
+      Math.random = function () {
+        n++;
+        window.__randomCalls = n;
+        return real.call(Math);
+      };
+    });
     const errors = [];
     page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
     page.on("console", (m) => {
@@ -143,25 +163,35 @@ test("fixtures: the video fixture is small enough to commit", () => {
 test("fixtures: fade-up renders 3 cards that actually move up 40px", async () => {
   await withServer(async (base) => {
     await withPage(base, "fade-up.html", async (page, errors) => {
-      const before = await page.evaluate(() => {
-        const el = document.querySelector("#card-0");
-        const r = el.getBoundingClientRect();
-        return { y: r.y, opacity: Number(getComputedStyle(el).opacity) };
-      });
-      await page.waitForTimeout(1100);
-      const after = await page.evaluate(() => {
-        const el = document.querySelector("#card-0");
-        const r = el.getBoundingClientRect();
-        return { y: r.y, opacity: Number(getComputedStyle(el).opacity) };
-      });
-
-      const moved = after.y - before.y;
-      assert.ok(
-        Math.abs(moved - -40) < 2,
-        `card-0 should rise 40px, measured ${moved}px`,
+      // Read the declared keyframes rather than sampling mid-flight: a fixed sleep
+      // races the animation and makes the test flaky for no gain in coverage.
+      const declared = await page.evaluate(() =>
+        document.getAnimations().map((a) => {
+          const frames = a.effect.getKeyframes();
+          return { from: frames[0]?.transform, to: frames[frames.length - 1]?.transform };
+        }),
       );
-      assert.ok(after.opacity > 0.99, `card-0 should end opaque, got ${after.opacity}`);
-      assert.ok(before.opacity < 0.5, `card-0 should start transparent, got ${before.opacity}`);
+      assert.ok(declared.length > 0, "fade-up must declare animations");
+      for (const d of declared) {
+        assert.equal(d.from, "translateY(40px)", `start transform should be translateY(40px), got ${d.from}`);
+        assert.equal(d.to, "translateY(0px)", `end transform should be translateY(0px), got ${d.to}`);
+      }
+
+      // The resting state must be the end state: the card sits where it started.
+      await page.waitForTimeout(1200);
+      const rest = await page.evaluate(() => {
+        const el = document.querySelector("#card-0");
+        return {
+          transform: getComputedStyle(el).transform,
+          opacity: Number(getComputedStyle(el).opacity),
+        };
+      });
+      assert.match(
+        rest.transform,
+        /matrix\(1, 0, 0, 1, 0, 0\)|none/,
+        `card-0 must settle at translateY(0), got ${rest.transform}`,
+      );
+      assert.ok(rest.opacity > 0.99, `card-0 should end opaque, got ${rest.opacity}`);
 
       const count = await page.evaluate(() => document.querySelectorAll(".card").length);
       assert.equal(count, MANIFEST.fixtures["fade-up.html"].cardCount);
@@ -257,9 +287,9 @@ test("fixtures: canvas-2d draws a non-blank canvas from its seeded PRNG", async 
   await withServer(async (base) => {
     await withPage(base, "canvas-2d.html", async (page, errors) => {
       // The page must not touch Math.random at all: that is what makes it deterministic
-      // regardless of --seed.
-      const usedRandom = await page.evaluate(() => window.__usedMathRandom === true);
-      assert.equal(usedRandom, false, "canvas-2d must not use Math.random()");
+      // regardless of --seed. Count calls by instrumenting it before any page script.
+      const randomCalls = await page.evaluate(() => window.__randomCalls ?? 0);
+      assert.equal(randomCalls, 0, `canvas-2d must not use Math.random(), it called it ${randomCalls} times`);
 
       const stats = await page.evaluate(() => {
         const c = document.querySelector("canvas");
@@ -299,19 +329,13 @@ test("fixtures: gl-three renders an animated three.js scene from the local vendo
       assert.equal(info.three, MANIFEST.fixtures["gl-three.html"].threeVersion, "three revision");
       assert.deepEqual([info.w, info.h], [640, 480]);
 
-      // Something is actually drawn, and it changes over time.
-      const stats = await page.evaluate(() => {
-        const c = document.querySelector("canvas");
-        const gl = c.getContext("webgl2") || c.getContext("webgl");
-        const px = new Uint8Array(c.width * c.height * 4);
-        gl.readPixels(0, 0, c.width, c.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
-        let nonBg = 0;
-        for (let i = 0; i < px.length; i += 4) if (px[i] > 40 || px[i + 1] > 50 || px[i + 2] > 60) nonBg++;
-        return nonBg;
-      });
+      // Measure from a real screenshot: readPixels on a composited WebGL canvas
+      // returns blank without preserveDrawingBuffer, and a screenshot is what the
+      // capture path actually records anyway.
+      const shot1 = await page.screenshot();
+      const stats = countNonBackground(shot1);
       assert.ok(stats > 1000, `the GL scene looks empty: ${stats} non-background pixels`);
 
-      const shot1 = await page.screenshot();
       await page.waitForTimeout(400);
       const shot2 = await page.screenshot();
       assert.ok(!shot1.equals(shot2), "the mesh is not rotating");

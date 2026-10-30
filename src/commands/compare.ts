@@ -466,9 +466,11 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
 
     // ---- human report: the activity chart is the part a person reads first, because the shape of
     // the curve tells you whether the easing is wrong before any number does.
+    // 30 cells wide so a full bar still leaves a visible gap before the next column
+    const BAR = 30;
     const bars = (v: number) => {
-      const n = Math.round(Math.max(0, Math.min(1, v)) * 34);
-      return n > 0 ? "█".repeat(n) : "·";
+      const n = Math.round(Math.max(0, Math.min(1, v)) * BAR);
+      return (n > 0 ? "█".repeat(n) : "·").padEnd(BAR, " ");
     };
     const lines: string[] = [
       `# compare — reference vs clone`,
@@ -493,10 +495,9 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
       `## activity per frame (change since the previous frame, each side normalised to its own peak)`,
       ``,
       "```",
-      `frame    t(s)   reference                          clone`,
+      `frame    t(s)   reference${" ".repeat(BAR - 9)}clone`,
       ...activity.map(
-        (a) =>
-          `${String(a.ref === 0 && a.clone === 0 ? "-" : "")}${String(Math.round(a.t * fps)).padStart(4)} ${a.t.toFixed(2).padStart(7)}   ${bars(a.ref).padEnd(34)} ${bars(a.clone)}`,
+        (a) => `${String(Math.round(a.t * fps)).padStart(5)} ${a.t.toFixed(2).padStart(7)}   ${bars(a.ref)}  ${bars(a.clone)}`,
       ),
       "```",
       ``,
