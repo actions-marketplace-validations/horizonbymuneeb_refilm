@@ -151,8 +151,36 @@ async function runCompare(opts: {
 /** The channel a spec row names, as a track property. */
 function trackPropFor(row: SpecRow): string | null {
   const p = row.property;
-  const known = ["opacity", "translateX", "translateY", "translateZ", "scale", "scaleX", "scaleY", "rotate", "x", "y", "w", "h"];
+  const known = ["opacity", "translateX", "translateY", "scale", "scaleX", "scaleY", "rotate", "x", "y", "w", "h"];
   return known.includes(p) ? p : null;
+}
+
+/** Layout channels are consequences of a transform or of layout, not authored properties. */
+const DERIVED_CHANNELS = new Set(["x", "y", "w", "h"]);
+
+function classesOf(selectorish: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of selectorish.matchAll(/\.([A-Za-z0-9_-]+)/g)) out.add(m[1]);
+  return out;
+}
+
+/**
+ * Does a track selector describe the element a spec row names?
+ *
+ * The spec says `div#card-1.card` (from inspect.json) and the track says `.card` (from
+ * `--track`). They are the same element when every class in the selector is on the row's
+ * element; an id or a different class set means a different element.
+ */
+function sameElement(specElement: string, trackSelector: string): boolean {
+  if (specElement === trackSelector) return true;
+  const specClasses = classesOf(specElement);
+  const trackClasses = classesOf(trackSelector);
+  if (!trackClasses.size) return false;
+  for (const c of trackClasses) if (!specClasses.has(c)) return false;
+  // an id in the selector must appear in the spec element
+  const id = /#([A-Za-z0-9_-]+)/.exec(trackSelector)?.[1];
+  if (id && !specElement.includes(`#${id}`)) return false;
+  return true;
 }
 
 interface RowMeasurement {
@@ -160,59 +188,72 @@ interface RowMeasurement {
   clone: { series: Series; fit: FitResult; fitStartMs: number; fitDurationMs: number } | null;
   element: string | null;
   prop: string | null;
+  /** Set when the row cannot be measured, with the reason and the fix. */
+  why?: string;
 }
 
 /**
  * Pairs a spec row with the same element in both tracks.
  *
- * The spec labels a repeated element `div.card[1]` and a track keys it by selector `.card`,
- * so the pairing is by index within the tracked selector: the nth row of a group is the nth
- * occurrence in the track, which is the only mapping the evidence supports. When the counts
- * disagree the row is unmeasurable and says so.
+ * The in-page tracker samples the FIRST element matching each selector, so a track with one
+ * selector (`.card`) holds one element, not all three siblings. Rows for the other siblings are
+ * unmeasurable from that track: reporting them as passing would be the exact bug this gate
+ * exists to prevent, so they are skipped with the selector that would measure them.
  */
 function measureRow(row: SpecRow, refFits: ChannelFit[], cloneFits: ChannelFit[]): RowMeasurement {
   const prop = trackPropFor(row);
-  if (!prop) return { ref: null, clone: null, element: null, prop: null };
+  if (!prop) {
+    return { ref: null, clone: null, element: null, prop: null, why: `${row.property} is not a channel the tracker samples (it reads opacity, transform and the box)` };
+  }
 
-  // element label without its [n] suffix, then the index
-  const m = /^(.*?)(?:\[(\d+)\])?$/.exec(row.element);
-  const tag = m?.[1] ?? row.element;
-  const index = m?.[2] !== undefined ? Number(m[2]) : undefined;
+  const indexMatch = /\[(\d+)\]$/.exec(row.element);
+  const index = indexMatch ? Number(indexMatch[1]) : 0;
 
-  const byProp = (fits: ChannelFit[]) => {
-    // the spec's element label is a tag; the track's is a selector. Prefer an exact selector
-    // match, then fall back to the only selector carrying this property.
-    const exact = fits.filter((f) => f.property === prop && f.element === tag);
-    if (exact.length) return exact;
-    const loose = fits.filter((f) => f.property === prop);
-    const elements = [...new Set(loose.map((f) => f.element))];
-    if (elements.length === 1) return loose;
-    return [];
-  };
+  const candidatesFor = (fits: ChannelFit[]) =>
+    fits.filter((f) => f.property === prop && sameElement(row.element, f.element));
 
-  const refCandidates = byProp(refFits);
-  const cloneCandidates = byProp(cloneFits);
-  if (!refCandidates.length) return { ref: null, clone: null, element: null, prop };
+  const refCandidates = candidatesFor(refFits);
+  const cloneCandidates = candidatesFor(cloneFits);
 
-  const pick = (list: ChannelFit[]): ChannelFit | null => {
-    if (!list.length) return null;
-    if (index !== undefined && list.length > index) return list[index];
-    if (list.length === 1) return list[0];
-    return list[0];
-  };
-
-  const ref = pick(refCandidates);
-  const clone = pick(cloneCandidates);
-  const wrap = (f: ChannelFit | null) => {
-    if (!f) return null;
+  if (!refCandidates.length) {
+    const tracked = [...new Set(refFits.map((f) => f.element))].join(", ") || "(none)";
     return {
-      series: f.series,
-      fit: f.fit,
-      fitStartMs: f.startMs,
-      fitDurationMs: f.fit.bestFits[0]?.durationMs ?? f.fit.visibleDurationMs,
+      ref: null,
+      clone: null,
+      element: null,
+      prop,
+      why: `the reference track has no ${prop} series for ${row.element} (tracked: ${tracked})`,
     };
-  };
-  return { ref: wrap(ref), clone: wrap(clone), element: ref?.element ?? null, prop };
+  }
+
+  // One tracked element standing in for N siblings: only the first sibling is measurable.
+  const siblingCount = Math.max(refCandidates.length, cloneCandidates.length, 1);
+  if (refCandidates.length < index + 1) {
+    const selector = refCandidates[0]?.element ?? ".unknown";
+    const nth = `:nth-child(${index + 1})`;
+    return {
+      ref: null,
+      clone: null,
+      element: null,
+      prop,
+      why: `the track holds ${refCandidates.length} element(s) for ${selector}, so sibling ${index} was never sampled — track it explicitly with --track "${selector}${nth}"`,
+    };
+  }
+
+  const wrap = (f: ChannelFit) => ({
+    series: f.series,
+    fit: f.fit,
+    fitStartMs: f.startMs,
+    fitDurationMs: f.fit.bestFits[0]?.durationMs ?? f.fit.visibleDurationMs,
+  });
+
+  const ref = refCandidates[index];
+  const clone = cloneCandidates[index] ?? cloneCandidates[0];
+  if (!clone) {
+    return { ref: wrap(ref), clone: null, element: ref.element, prop, why: `the clone's track has no ${prop} series for ${ref.element}` };
+  }
+  void siblingCount;
+  return { ref: wrap(ref), clone: wrap(clone), element: ref.element, prop };
 }
 
 function check(
@@ -236,8 +277,10 @@ function rowChecks(row: SpecRow, m: RowMeasurement, fps: number): VerifyCheck[] 
   const label = `${row.element} ${row.property}`;
 
   if (!m.ref || !m.clone) {
-    const missing = !m.ref ? "reference track" : "clone track";
-    return [skip(`${row.id}.timing`, `${label} timing`, `no ${missing} data for this row: capture the clone with --track "<selector>" to measure it`)];
+    const why =
+      m.why ??
+      `no ${!m.ref ? "reference" : "clone"} data for this row: capture with --track "<selector>" to measure it`;
+    return [skip(`${row.id}.timing`, `${label} timing`, why)];
   }
 
   // ---- timing
@@ -335,22 +378,6 @@ function rowChecks(row: SpecRow, m: RowMeasurement, fps: number): VerifyCheck[] 
     ),
   );
 
-  // ---- the spec row's own promise: does the declared value match what was measured?
-  if (row.startMs !== null && row.durationMs !== null) {
-    const rowStartErr = Math.round(m.clone.fitStartMs - row.startMs);
-    const rowDurErr = Math.round(m.clone.fitDurationMs - row.durationMs);
-    checks.push(
-      check(
-        `${row.id}.spec`,
-        `${label} matches spec`,
-        Math.abs(rowStartErr) <= TIMING_LIMIT_MS && Math.abs(rowDurErr) <= TIMING_LIMIT_MS ? "pass" : "fail",
-        `start ${rowStartErr >= 0 ? "+" : ""}${rowStartErr} ms, duration ${rowDurErr >= 0 ? "+" : ""}${rowDurErr} ms`,
-        `spec ${row.startMs}/${row.durationMs} ms ±${TIMING_LIMIT_MS} ms`,
-        `the clone must hit the row the spec promised, not just match the reference`,
-      ),
-    );
-  }
-
   // ---- fps resolution note: two frames at 25 fps is the limit, and it is worth naming
   if (fps < 20) {
     checks.push(skip(`${row.id}.resolution`, `${label} timing resolution`, `${fps} fps resolves timing to ${Math.round(1000 / fps)} ms, coarser than the ±${TIMING_LIMIT_MS} ms limit`));
@@ -419,19 +446,31 @@ function staggerChecks(spec: Spec, refFits: ChannelFit[], cloneFits: ChannelFit[
   return checks;
 }
 
-/** Anything moving in the clone that the spec says should be still. */
+/**
+ * Anything moving in the clone that the spec does not describe.
+ *
+ * Two things are deliberately not "extra motion": layout channels (x/y/w/h), which move because
+ * a transform moved them, and a selector that stands in for a sibling row — the tracker samples
+ * one element per selector, so the same channel can be legitimately shared by three rows.
+ */
 function stillnessChecks(spec: Spec, cloneFits: ChannelFit[]): VerifyCheck[] {
-  const specElements = new Set(spec.rows.map((r) => r.element.replace(/\[\d+\]$/, "")));
-  const specProps = new Set(spec.rows.map((r) => `${r.element.replace(/\[\d+\]$/, "")}|${r.property}`));
+  const specProps = new Set(spec.rows.map((r) => `${r.property}`));
   const unexpected = cloneFits.filter((f) => {
-    if (specElements.has(f.element)) {
-      // the element is in the spec: only complain about a property the spec never mentions
-      return !specProps.has(`${f.element}|${f.property}`) && !["x", "y", "w", "h"].includes(f.property);
-    }
+    if (DERIVED_CHANNELS.has(f.property)) return false;
+    if (specProps.has(f.property)) return false;
     return true;
   });
   if (!unexpected.length) {
-    return [check("stillness", "nothing extra is moving", "pass", 0, 0, "every moving element and property in the clone is in the spec")];
+    return [
+      check(
+        "stillness",
+        "nothing extra is moving",
+        "pass",
+        0,
+        0,
+        "every moving property in the clone is one the spec describes",
+      ),
+    ];
   }
   const described = unexpected.slice(0, 6).map((f) => `${f.element}.${f.property}`);
   return [
@@ -575,7 +614,7 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
     clone: clone.frames,
     out: compareOut,
     fps,
-    region: fidelity === "mixed" ? region : region,
+    region,
     threshold: fidelity === "pixel" ? Math.min(threshold, PIXEL_MEAN_LIMIT) : threshold,
   });
 

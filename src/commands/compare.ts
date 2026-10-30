@@ -177,15 +177,19 @@ function motionWindow(activity: number[], fps: number): MotionWindow {
   if (!n || total <= 1e-9 || peak < 0) {
     return { first: -1, last: -1, peak: -1, startS: 0, endS: 0, durationS: 0 };
   }
-  const startAt = total * 0.02;
-  const endAt = total * 0.98;
-  let acc = 0;
+  // Constant background change (grain, resampling shimmer, a blinking cursor) is present in every
+  // frame, so it is estimated as the median change and the floor sits above it. The floor also
+  // carries a small relative term, so the same rule reads a 4K capture and a 320px capture alike.
+  const sorted = [...activity].sort((a, b) => a - b);
+  const background = sorted[Math.floor(sorted.length / 2)] ?? 0;
+  const floor = Math.max(0.0005, background * 4, top * 0.01);
   let first = -1;
   let last = -1;
   for (let i = 0; i < n; i++) {
-    acc += activity[i];
-    if (first < 0 && acc >= startAt) first = i;
-    if (acc <= endAt) last = i;
+    if (activity[i] >= floor) {
+      if (first < 0) first = i;
+      last = i;
+    }
   }
   if (first < 0) first = peak;
   if (last < first) last = first;
