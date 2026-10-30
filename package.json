@@ -1,7 +1,25 @@
 {
   "name": "refilm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Record a reference animation, rebuild it in your code, re-film the copy and compare frame by frame until it matches.",
+  "keywords": [
+    "animation",
+    "reverse-engineering",
+    "playwright",
+    "motion",
+    "verification",
+    "agent-skill",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horizonbymuneeb/refilm.git"
+  },
+  "homepage": "https://github.com/horizonbymuneeb/refilm#readme",
+  "bugs": {
+    "url": "https://github.com/horizonbymuneeb/refilm/issues"
+  },
+  "author": "Muneeb Anjum",
   "type": "module",
   "bin": {
     "refilm": "./dist/cli.js"
@@ -13,6 +31,9 @@
   "files": [
     "dist",
     "skill",
+    "demo",
+    "docs/media",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ],
@@ -26,15 +47,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js"
   },
-  "keywords": [
-    "animation",
-    "reverse-engineering",
-    "playwright",
-    "motion",
-    "verification",
-    "agent-skill",
-    "cli"
-  ],
   "license": "MIT",
   "dependencies": {
     "pixelmatch": "8.0.0",

@@ -116,6 +116,24 @@
       "particleCount": 40,
       "deterministic": false,
       "note": "Deliberately uses Math.random so a different --seed MUST change the frames. Paired with canvas-2d (own PRNG), which must not change with --seed."
+    },
+    "scale-in.html": {
+      "kind": "css-keyframes",
+      "trigger": "load",
+      "description": "3 tiles, scale(0.6)->1 + opacity 0->1, cubic-bezier(.22,1,.36,1), 800ms, stagger 110ms. The only fixture that animates a uniform scale, which the tracker exposes as scaleX+scaleY while the stylesheet declares one `scale`.",
+      "durationMs": 800,
+      "staggerMs": 110,
+      "easing": "cubic-bezier(0.22, 1, 0.36, 1)",
+      "easingFamily": "ease-out",
+      "fromScale": 0.6,
+      "toScale": 1,
+      "tileCount": 3,
+      "totalMs": 1020,
+      "selector": ".tile",
+      "properties": [
+        "transform",
+        "opacity"
+      ]
     }
   }
 }

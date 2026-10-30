@@ -158,6 +158,26 @@ function trackPropFor(row: SpecRow): string | null {
 /** Layout channels are consequences of a transform or of layout, not authored properties. */
 const DERIVED_CHANNELS = new Set(["x", "y", "w", "h"]);
 
+/**
+ * A tracked element exposes one scale as two axes (`scaleX` and `scaleY`), while the spec
+ * records the single `scale` the stylesheet declared. Comparing the raw names makes every
+ * uniform scale look like an undescribed animation, so both spellings answer to one another.
+ */
+const PROPERTY_ALIASES: Record<string, string[]> = {
+  scale: ["scaleX", "scaleY"],
+  scaleX: ["scale"],
+  scaleY: ["scale"],
+  translateX: ["x"],
+  translateY: ["y"],
+};
+
+/** Is `tracked` one of the properties the spec describes? */
+function isDescribed(tracked: string, described: Set<string>): boolean {
+  if (described.has(tracked)) return true;
+  for (const alias of PROPERTY_ALIASES[tracked] ?? []) if (described.has(alias)) return true;
+  return false;
+}
+
 function classesOf(selectorish: string): Set<string> {
   const out = new Set<string>();
   for (const m of selectorish.matchAll(/\.([A-Za-z0-9_-]+)/g)) out.add(m[1]);
@@ -478,7 +498,7 @@ function stillnessChecks(spec: Spec, cloneFits: ChannelFit[]): VerifyCheck[] {
   const specProps = new Set(spec.rows.map((r) => `${r.property}`));
   const unexpected = cloneFits.filter((f) => {
     if (DERIVED_CHANNELS.has(f.property)) return false;
-    if (specProps.has(f.property)) return false;
+    if (isDescribed(f.property, specProps)) return false;
     return true;
   });
   if (!unexpected.length) {

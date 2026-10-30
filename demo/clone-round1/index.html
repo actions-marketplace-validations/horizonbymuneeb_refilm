@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clone — round 1 (deliberately wrong)</title>
+<style>
+  /* ROUND 1: the first pass an agent (or a person) writes after one look.
+     Same layout, but every card rises together, with a linear curve in 420ms
+     instead of the reference's 820ms ease-out and 100ms stagger.
+     refilm verify catches exactly this and exits 1. */
+  :root { --bg: #0a0a0d; --card: #14141b; --line: #26262f; --ink: #f2f2f5; --dim: #9a9aa6; --accent: #46d3a4; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .stage { width: 1080px; max-width: 92vw; }
+  .eyebrow {
+    font: 600 12px/1 ui-monospace, monospace; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--accent); opacity: 0; transform: translateY(14px);
+    animation: rise 420ms linear forwards;
+  }
+  h1 {
+    font-size: 56px; line-height: 1.06; letter-spacing: -.03em; margin: 14px 0 10px;
+    opacity: 0; transform: translateY(26px);
+    animation: rise 420ms linear forwards;
+  }
+  h1 em { font-style: normal; color: var(--accent); }
+  .sub {
+    color: var(--dim); font-size: 17px; max-width: 46ch; margin: 0 0 34px;
+    opacity: 0; transform: translateY(20px);
+    animation: rise 420ms linear forwards;
+  }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px;
+    opacity: 0; transform: translateY(38px) scale(.97);
+    animation: cardIn 420ms linear forwards;
+  }
+  .tier { font: 600 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .price { font-size: 34px; font-weight: 650; letter-spacing: -.02em; margin: 10px 0 2px; }
+  .price span { font-size: 14px; font-weight: 400; color: var(--dim); }
+  .bar {
+    height: 3px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    margin: 16px 0 14px; transform-origin: left center; transform: scaleX(0);
+    animation: grow 420ms linear forwards;
+  }
+  .card ul { margin: 0; padding: 0; list-style: none; color: var(--dim); font-size: 14px; }
+  .card li { padding: 3px 0; }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  @keyframes cardIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes grow { to { transform: scaleX(1); } }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="eyebrow">Pricing</div>
+    <h1>Motion that <em>proves</em> itself</h1>
+    <p class="sub">Same three plans, your own copy. The verification loop is what makes the match real.</p>
+    <div class="cards">
+      <article class="card">
+        <div class="tier">Starter</div><div class="price">$0<span>/mo</span></div><div class="bar"></div>
+        <ul><li>1 project</li><li>Motion fidelity</li><li>Contact sheets</li></ul>
+      </article>
+      <article class="card">
+        <div class="tier">Studio</div><div class="price">$29<span>/mo</span></div><div class="bar"></div>
+        <ul><li>Unlimited projects</li><li>Pixel fidelity</li><li>Canvas + WebGL traces</li></ul>
+      </article>
+      <article class="card">
+        <div class="tier">Scale</div><div class="price">$99<span>/mo</span></div><div class="bar"></div>
+        <ul><li>Everything in Studio</li><li>CI gate</li><li>Self-hosted runner</li></ul>
+      </article>
+    </div>
+  </div>
+</body>
+</html>

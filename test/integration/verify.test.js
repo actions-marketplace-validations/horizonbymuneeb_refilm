@@ -254,3 +254,50 @@ test("verify: a malformed spec file reports a parseable error envelope", async (
     cleanup(out);
   }
 });
+
+test("verify: a uniform scale does not trip the stillness check (scale vs scaleX/scaleY)", async () => {
+  // Regression: the spec records one `scale` for a declared transform, while the in-page
+  // tracker exposes the matrix as two axes (`scaleX` and `scaleY`). Comparing the raw names
+  // made every uniformly scaled element look like an animation the spec never described, so a
+  // correct clone failed on "nothing extra is moving". The alias map in verify.ts fixes it.
+  const ref = tmpDir();
+  const clone = tmpDir();
+  const out = tmpDir();
+  try {
+    // scale-in.html declares ONE `scale` in CSS; the tracker exposes the matrix as
+    // scaleX and scaleY. --track is required: without a track.json the per-row motion
+    // checks (and the stillness check) are skipped rather than run, so the regression
+    // would hide behind a skip.
+    await capture(fixture("scale-in.html"), ref, ["--clock", "virtual", "--seed", "1", "--track", ".tile"]);
+    await capture(fixture("scale-in.html"), clone, ["--clock", "virtual", "--seed", "1", "--track", ".tile"]);
+    const spec = await specOf(ref, join(ref, "spec.json"));
+
+    const res = await runCli([
+      "verify",
+      "--spec", spec,
+      "--ref", ref,
+      "--clone", clone,
+      "--out", out,
+      "--json",
+    ], { timeoutMs: 180_000 });
+
+    const env = parseEnvelope(res, "verify scale alias");
+    const stillness = env.data.checks.find((c) => c.id === "stillness");
+    assert.ok(stillness, "verify must report a stillness check");
+
+    // The specific failure this guards against.
+    const scaleMentioned = /scale[XY]?/.test(String(stillness.detail ?? ""));
+    if (stillness.status === "fail" && scaleMentioned) {
+      assert.fail(`stillness failed on a scale axis that the spec already describes: ${stillness.detail}`);
+    }
+    assert.notEqual(
+      stillness.status,
+      "fail",
+      `an identical clone must not report extra motion: ${stillness.detail}`,
+    );
+  } finally {
+    cleanup(ref);
+    cleanup(clone);
+    cleanup(out);
+  }
+});
