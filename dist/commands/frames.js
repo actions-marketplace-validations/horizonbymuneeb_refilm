@@ -80,7 +80,8 @@ export async function run(argv, ctx) {
         throw usageError(`--start ${start}s is past the end of the ${src.durationS.toFixed(2)}s source`, "drop --start, or probe first with --probe");
     }
     const crop = parseRect(args.crop);
-    const width = args.width !== undefined && !bool(args.width) ? Math.max(1, Math.round(num(args.width, 0))) : 0;
+    // --width is a value flag; a bare --width means "no scaling" rather than a zero-width frame
+    const width = args.width === undefined || args.width === true ? 0 : Math.max(1, Math.round(num(args.width, 0)));
     // A stale frame from an earlier run would silently extend the set and skew every later
     // comparison, so the output folder is cleared of PNGs first.
     for (const f of readdirSync(outDir))

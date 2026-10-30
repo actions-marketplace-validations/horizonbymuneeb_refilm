@@ -469,6 +469,9 @@ export function compareTraces(refDir, cloneDir, opts = {}) {
     const C = readJson(join(cloneDir, "gl", "gl.json"));
     const rt = readJson(join(refDir, "gl-track.json"));
     const ct = readJson(join(cloneDir, "gl-track.json"));
+    // GlTrack keeps channels as unknown on purpose (the file is external); this is where they get their shape
+    const refChannels = rt.channels;
+    const cloneChannels = ct.channels;
     const lines = [`# GPU compare: ${refDir} vs ${cloneDir}`, ""];
     // canvases matched by element (tag, id, classes); probe canvases libraries create (300×150, not in the
     // page) are left out
@@ -514,7 +517,7 @@ export function compareTraces(refDir, cloneDir, opts = {}) {
         .replace(/^(\w+):s\d+\//, "$1:")
         .replace(/#\d+/g, "");
     const cloneIndex = new Map();
-    for (const key of Object.keys(ct.channels))
+    for (const key of Object.keys(cloneChannels))
         cloneIndex.set(tail(key), [...(cloneIndex.get(tail(key)) ?? []), key]);
     const seriesOf = (track, key) => track.samples.filter((s) => s.v[key] !== undefined).map((s) => [s.t, s.v[key]]);
     const nearest = (series, time) => {
@@ -532,11 +535,13 @@ export function compareTraces(refDir, cloneDir, opts = {}) {
         Math.abs((c.lastChangeMs ?? 0) - (r.lastChangeMs ?? 0)) +
         (1000 * (Math.abs(c.min - r.min) + Math.abs(c.max - r.max))) / Math.max(1e-9, Math.abs(r.max - r.min));
     const taken = new Set();
-    for (const [refKey, refChannel] of Object.entries(rt.channels)) {
+    for (const [refKey, refChannel] of Object.entries(refChannels)) {
         if (refChannel.kind === "clock" || (grep && !grep.test(refKey)))
             continue;
         const wanted = map[tail(refKey)] ?? tail(refKey);
-        const cloneKey = (cloneIndex.get(wanted) ?? []).filter((k) => !taken.has(k)).sort((x, y) => likeness(refChannel, ct.channels[x]) - likeness(refChannel, ct.channels[y]))[0];
+        const cloneKey = (cloneIndex.get(wanted) ?? [])
+            .filter((k) => !taken.has(k))
+            .sort((x, y) => likeness(refChannel, cloneChannels[x]) - likeness(refChannel, cloneChannels[y]))[0];
         if (cloneKey)
             taken.add(cloneKey);
         if (!cloneKey) {
@@ -544,7 +549,7 @@ export function compareTraces(refDir, cloneDir, opts = {}) {
             failures++;
             continue;
         }
-        const cloneChannel = ct.channels[cloneKey];
+        const cloneChannel = cloneChannels[cloneKey];
         const startDelta = refChannel.firstChangeMs !== null && cloneChannel.firstChangeMs !== null ? cloneChannel.firstChangeMs - refChannel.firstChangeMs : NaN;
         const endDelta = refChannel.lastChangeMs !== null && cloneChannel.lastChangeMs !== null ? cloneChannel.lastChangeMs - refChannel.lastChangeMs : NaN;
         const span = Math.max(1e-9, refChannel.max - refChannel.min);
@@ -570,8 +575,9 @@ export function readGlTrack(dir) {
     return readJson(file);
 }
 export function seriesFor(track, key) {
-    const exact = Object.keys(track.channels).filter((k) => k === key);
-    const matches = exact.length ? exact : Object.keys(track.channels).filter((k) => k.endsWith("." + key) || k.endsWith(key));
+    const all = Object.keys(track.channels);
+    const exact = all.filter((k) => k === key);
+    const matches = exact.length ? exact : all.filter((k) => k.endsWith("." + key) || k.endsWith(key));
     if (matches.length !== 1) {
         throw new Error(matches.length ? `ambiguous channel "${key}": ${matches.join(", ")}` : `no channel "${key}"`);
     }

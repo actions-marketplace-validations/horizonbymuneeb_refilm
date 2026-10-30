@@ -5,9 +5,9 @@
 // (which sibling an animation belongs to, an infinite repeat, a keyframe rule with no
 // animation attached) is reported as a note instead of a number.
 
-import type { EasingFamily, SpecRow } from "../types.js";
-import { classifyCurve, curveOf, familyOf, matrixParts } from "./fit-curve.js";
-import { RawRow } from "./row.js";
+import type { EasingFamily } from "../types.js";
+import { classifyCurve, curveOf, familyOf, keywordTransform } from "./easing.js";
+import type { RawRow } from "./row.js";
 
 export interface InspectTiming {
   delay?: number | string;
@@ -104,8 +104,8 @@ interface ChannelValue {
 
 /** Splits a transform pair into the channels that actually change. */
 export function transformChannels(from: string, to: string): Array<{ property: string; from: number; to: number }> {
-  const a = matrixParts(from);
-  const b = matrixParts(to);
+  const a = keywordTransform(from);
+  const b = keywordTransform(to);
   const out: Array<{ property: string; from: number; to: number }> = [];
   const push = (property: string, x: number, y: number) => {
     if (Math.abs(x - y) > 1e-6) out.push({ property, from: round(x), to: round(y) });

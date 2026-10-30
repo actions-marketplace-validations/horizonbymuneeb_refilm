@@ -159,8 +159,23 @@ function captureMetaOf(framesDir) {
     const p = join(framesDir, "..", "capture.json");
     return exists(p) ? readJson(p) : null;
 }
-/** Settings that must match, or the diff is measuring the capture, not the work. */
-const SETUP_KEYS = ["viewport", "scale", "fps", "trigger", "duration", "preRoll", "clock", "seed", "gpu", "rafHz", "rate"];
+/**
+ * Settings that must match, or the diff is measuring the capture, not the work.
+ * Label → CaptureMeta field; the labels are the short names a person reads in the warning.
+ */
+const SETUP_KEYS = [
+    ["viewport", "viewport"],
+    ["scale", "scale"],
+    ["fps", "fps"],
+    ["trigger", "trigger"],
+    ["duration", "durationMs"],
+    ["preRoll", "preRollMs"],
+    ["clock", "clock"],
+    ["seed", "seed"],
+    ["gpu", "gpu"],
+    ["rafHz", "rafHz"],
+    ["rate", "rate"],
+];
 export async function run(argv, ctx) {
     const rep = reporter("compare", { json: ctx.json });
     const args = parseArgs(argv);
@@ -198,11 +213,11 @@ export async function run(argv, ctx) {
     const capRef = captureMetaOf(refDir);
     const capClone = captureMetaOf(cloneDir);
     if (capRef && capClone) {
-        for (const key of SETUP_KEYS) {
-            const a = JSON.stringify(capRef[key] ?? null);
-            const b = JSON.stringify(capClone[key] ?? null);
+        for (const [label, field] of SETUP_KEYS) {
+            const a = JSON.stringify(capRef[field] ?? null);
+            const b = JSON.stringify(capClone[field] ?? null);
             if (a !== b) {
-                const msg = `${key}: reference ${a}, clone ${b}`;
+                const msg = `${label}: reference ${a}, clone ${b}`;
                 setupWarnings.push(msg);
                 rep.warn(msg);
             }
@@ -230,16 +245,17 @@ export async function run(argv, ctx) {
         const cloneSharp = cloneImgs.map((f) => f.img);
         const refCmp = blurR ? refSharp.map((img) => boxBlur(img, blurR)) : refSharp;
         const cloneCmp = blurR ? cloneSharp.map((img) => boxBlur(img, blurR)) : cloneSharp;
-        // ---- activity: how much changed since the previous frame, per side. Timing is read from the
-        // sharp frames even with --blur, because blur hides the moment a change starts.
+        // ---- activity: how much changed since the previous frame, per side. Both sides use the same
+        // images that were compared, so --blur removes grain from the timing curve too; otherwise a
+        // noisy clone would look like it "changes" on every frame and its motion window would never end.
         const rawActivity = (imgs) => {
             const out = [0];
             for (let i = 1; i < imgs.length; i++)
                 out.push(mismatch(imgs[i - 1], imgs[i], pixelThreshold));
             return out;
         };
-        const refRaw = rawActivity(refSharp);
-        const cloneRaw = rawActivity(cloneSharp);
+        const refRaw = rawActivity(refCmp);
+        const cloneRaw = rawActivity(cloneCmp);
         const normalise = (raw) => {
             const top = Math.max(...raw, 0);
             return top > 0 ? raw.map((v) => v / top) : raw.map(() => 0);
@@ -403,7 +419,11 @@ export async function run(argv, ctx) {
             lines.push(``, `Re-capture both sides with identical settings before trusting the numbers below.`, ``);
         }
         lines.push(`## activity per frame (change since the previous frame, each side normalised to its own peak)`, ``, "```", `frame    t(s)   reference                          clone`, ...activity.map((a) => `${String(a.ref === 0 && a.clone === 0 ? "-" : "")}${String(Math.round(a.t * fps)).padStart(4)} ${a.t.toFixed(2).padStart(7)}   ${bars(a.ref).padEnd(34)} ${bars(a.clone)}`), "```", ``, `## verdict: ${pass ? "PASS" : "FAIL"}`, ``, ...(failures.length ? failures.map((f) => `- ${f}`) : ["- every criterion passed"]), ``, `Diff images: ${diffDir ?? "(skipped with --no-diffs)"} — red pixels differ. ` +
-            `Read them with refilm sheet compare --ref ${refDir} --clone ${cloneDir} --diff ${join(outDir, "diff")}.`);
+            `Read them with refilm sheet compare --ref ${refDir} --clone ${cloneDir} --diff ${join(outDir, "diff")}.`, ``, offset !== 0
+            ? `Note: auto-align chose offset ${offset} by best pixel agreement, so a constant lead/lag of up to ` +
+                `${Math.abs(offset)}/${fps}s between the two recordings is absorbed into the alignment and does not ` +
+                `show up as a timing error. Pass --offset 0 to measure absolute timing.`
+            : `Note: auto-align found no capture shift (offset 0), so the timing numbers are absolute.`);
         writeText(join(outDir, "report.md"), lines.join("\n") + "\n");
         rep.say(lines.join("\n"));
         rep.emit("compare", report);

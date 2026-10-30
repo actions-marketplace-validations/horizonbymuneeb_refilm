@@ -73,6 +73,44 @@ test("parseArgs: empty argv keeps defaults and an empty positional list", () => 
   assert.equal(a.fps, 25);
 });
 
+// Regression: defaults used to shadow argv (out[key] was already the default, so
+// assign() appended the real value and num/str/bool read element 0 — the default).
+// src/engine/options.ts reads every option through exactly this shape, so this test
+// reproduces the call site rather than just the primitive.
+test("parseArgs: defaults never shadow explicit flags (options.ts call shape)", () => {
+  const defaults = { fps: 25, clock: "real", trigger: "load", gpu: "software", headed: false, track: [] };
+
+  // (a) explicit values win, read back through the same coercers options.ts uses
+  const a = lib.parseArgs(
+    ["--fps", "60", "--clock", "virtual", "--trigger", "scroll", "--gpu", "hardware", "--headed"],
+    defaults,
+  );
+  assert.equal(lib.num(a.fps, 25), 60, "--fps must not be overridden by the default");
+  assert.equal(lib.str(a.clock), "virtual", "--clock must not be overridden by the default");
+  assert.equal(lib.str(a.trigger), "scroll", "--trigger must not be overridden by the default");
+  assert.equal(lib.str(a.gpu), "hardware", "--gpu must not be overridden by the default");
+  assert.equal(lib.bool(a.headed), true, "an explicit bare flag beats a false default");
+
+  // (b) absent options still receive their defaults
+  const b = lib.parseArgs([], defaults);
+  assert.equal(lib.num(b.fps, 25), 25);
+  assert.equal(lib.str(b.clock), "real");
+  assert.equal(lib.str(b.trigger), "load");
+  assert.equal(lib.str(b.gpu), "software");
+  assert.equal(lib.bool(b.headed), false);
+
+  // (c) repeated flags still collect into an array, even with a default present
+  const c = lib.parseArgs(["--track", ".a", "--track", ".b"], { track: [] });
+  assert.deepEqual(lib.list(c.track), [".a", ".b"], "repeated --track must collect, not be replaced");
+});
+
+test("parseArgs: a default equal to the user's value is not duplicated into an array", () => {
+  // The old implementation turned this into ["virtual", "virtual"].
+  const a = lib.parseArgs(["--clock", "virtual"], { clock: "virtual" });
+  assert.equal(lib.str(a.clock), "virtual");
+  assert.ok(!Array.isArray(a.clock), "a single flag must not become an array because of a default");
+});
+
 // ------------------------------------------------------------------ parseTime
 
 test("parseTime: the four documented forms all resolve to seconds", () => {

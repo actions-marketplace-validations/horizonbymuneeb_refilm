@@ -184,7 +184,7 @@ export async function run(argv, ctx) {
             })
                 .join("");
             docs.push({
-                name: `compare-${pad(s + 1, 2)}.png`,
+                name: `sheet-${pad(s + 1, 2)}.png`,
                 html: page(`reference vs clone — frames ${chunk[0]}–${chunk[chunk.length - 1]}`, `${fps} fps · ${picked.length} frames · clone offset ${offset}${diffFiles.length ? " · diff column from " + basename(abs(diffArg)) : ""}`, headings + rows),
             });
         }

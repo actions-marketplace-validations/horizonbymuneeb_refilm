@@ -49,3 +49,29 @@ export const CONTEXT_PROBE = `(() => {
     };
   }
 })();`;
+
+/**
+ * Keeps a canvas' drawing buffer readable.
+ *
+ * A WebGL context created with preserveDrawingBuffer:false is cleared once the compositor has taken the
+ * frame, so a screenshot can land after the clear and record a blank or half-drawn canvas. That is invisible
+ * to a human but it makes a virtual-clock capture of a GPU page nondeterministic, one frame at a time. Forcing
+ * the attribute on changes nothing about what the page draws, only whether the result is still there to read.
+ */
+export const DRAWING_BUFFER_PATCH = `(() => {
+  const patch = (proto) => {
+    if (!proto) return;
+    const original = proto.getContext;
+    proto.getContext = function getContext(type) {
+      const args = Array.prototype.slice.call(arguments);
+      if (args.length > 1 && args[1] && typeof args[1] === "object" && !args[1].preserveDrawingBuffer) {
+        args[1] = Object.assign({}, args[1], { preserveDrawingBuffer: true });
+      } else if (args.length <= 1) {
+        args[1] = { preserveDrawingBuffer: true };
+      }
+      return original.apply(this, args);
+    };
+  };
+  patch(self.HTMLCanvasElement && HTMLCanvasElement.prototype);
+  patch(self.OffscreenCanvas && OffscreenCanvas.prototype);
+})();`;

@@ -108,7 +108,8 @@ export async function run(argv: string[], ctx: { json: boolean }): Promise<numbe
   }
 
   const crop = parseRect(args.crop);
-  const width = args.width !== undefined && !bool(args.width) ? Math.max(1, Math.round(num(args.width, 0))) : 0;
+  // --width is a value flag; a bare --width means "no scaling" rather than a zero-width frame
+  const width = args.width === undefined || args.width === true ? 0 : Math.max(1, Math.round(num(args.width, 0)));
 
   // A stale frame from an earlier run would silently extend the set and skew every later
   // comparison, so the output folder is cleared of PNGs first.

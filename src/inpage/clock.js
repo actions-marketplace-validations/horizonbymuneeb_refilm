@@ -389,8 +389,27 @@
     return st.t;
   }
 
+  /**
+   * Lets the real compositor take one tick without moving the virtual clock.
+   *
+   * A canvas is drawn into a GPU back buffer; the compositor copies it to the screen on its own real-clock
+   * tick. Screenshotting straight after a virtual step can therefore read the previous composite. Awaiting a
+   * real animation frame (the native one, not the virtualised requestAnimationFrame) makes the capture wait
+   * for that tick. Virtual time does not move, so this cannot change what the page draws.
+   */
+  function present() {
+    return new Promise(function (resolve) {
+      nat.frame(function () {
+        nat.frame(function () {
+          resolve(true);
+        });
+      });
+    });
+  }
+
   root.__filmClock = {
     virtual: true,
+    present,
     seed: cfg.seed === undefined ? null : cfg.seed,
     hold,
     step,
@@ -404,6 +423,9 @@
       frames: st.frames.size,
       frameNo: st.frameNo,
       animations: st.anims.size,
+      // how many time sources the page has registered so far: it stops moving once the page has booted,
+      // which is how the capturer knows frame 0 will not race the page's own start-up
+      signups: st.ids,
     }),
   };
   if (cfg.holdAtStart) hold();

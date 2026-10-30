@@ -491,7 +491,7 @@ export function summarizeTrace(dirIn: string): string {
   if (gl.webgpu) lines.push("", "## WebGPU", `- ${gl.webgpu.modules.length} shader modules (WGSL in gl/shaders/), ${gl.webgpu.pipelines.length} pipelines`);
   if (gl.canvas2d) lines.push("", "## Canvas 2D", ...gl.canvas2d.map((f: string) => `- call log of sampled frames: ${f}`));
 
-  const channelList = Object.entries<any>(track.channels);
+  const channelList = Object.entries(track.channels as Record<string, Channel>);
   if (channelList.length) {
     lines.push("", `## Animated channels (${channelList.length}; read one with: refilm gl channels <dir> --series KEY)`);
     const order = ["transition", "there-and-back", "oscillation", "steps", "clock"];
@@ -529,6 +529,9 @@ export function compareTraces(refDir: string, cloneDir: string, opts: CompareOpt
   const C = readJson(join(cloneDir, "gl", "gl.json"));
   const rt: GlTrack = readJson(join(refDir, "gl-track.json"));
   const ct: GlTrack = readJson(join(cloneDir, "gl-track.json"));
+  // GlTrack keeps channels as unknown on purpose (the file is external); this is where they get their shape
+  const refChannels = rt.channels as Record<string, Channel>;
+  const cloneChannels = ct.channels as Record<string, Channel>;
   const lines: string[] = [`# GPU compare: ${refDir} vs ${cloneDir}`, ""];
 
   // canvases matched by element (tag, id, classes); probe canvases libraries create (300×150, not in the
@@ -579,7 +582,7 @@ export function compareTraces(refDir: string, cloneDir: string, opts: CompareOpt
       .replace(/^(\w+):s\d+\//, "$1:")
       .replace(/#\d+/g, "");
   const cloneIndex = new Map<string, string[]>();
-  for (const key of Object.keys(ct.channels)) cloneIndex.set(tail(key), [...(cloneIndex.get(tail(key)) ?? []), key]);
+  for (const key of Object.keys(cloneChannels)) cloneIndex.set(tail(key), [...(cloneIndex.get(tail(key)) ?? []), key]);
   const seriesOf = (track: GlTrack, key: string) =>
     track.samples.filter((s) => s.v[key] !== undefined).map((s) => [s.t, s.v[key]] as [number, number]);
   const nearest = (series: [number, number][], time: number) => {
@@ -596,17 +599,19 @@ export function compareTraces(refDir: string, cloneDir: string, opts: CompareOpt
     Math.abs((c.lastChangeMs ?? 0) - (r.lastChangeMs ?? 0)) +
     (1000 * (Math.abs(c.min - r.min) + Math.abs(c.max - r.max))) / Math.max(1e-9, Math.abs(r.max - r.min));
   const taken = new Set<string>();
-  for (const [refKey, refChannel] of Object.entries<any>(rt.channels)) {
+  for (const [refKey, refChannel] of Object.entries(refChannels)) {
     if (refChannel.kind === "clock" || (grep && !grep.test(refKey))) continue;
     const wanted = map[tail(refKey)] ?? tail(refKey);
-    const cloneKey = (cloneIndex.get(wanted) ?? []).filter((k) => !taken.has(k)).sort((x, y) => likeness(refChannel, ct.channels[x]) - likeness(refChannel, ct.channels[y]))[0];
+    const cloneKey = (cloneIndex.get(wanted) ?? [])
+      .filter((k) => !taken.has(k))
+      .sort((x, y) => likeness(refChannel, cloneChannels[x]) - likeness(refChannel, cloneChannels[y]))[0];
     if (cloneKey) taken.add(cloneKey);
     if (!cloneKey) {
       rows.push(`| ${refKey} | ${refChannel.kind} ${refChannel.min}→${refChannel.max} ${refChannel.firstChangeMs}–${refChannel.lastChangeMs} ms | (no channel named ${wanted}) | | missing |`);
       failures++;
       continue;
     }
-    const cloneChannel = ct.channels[cloneKey];
+    const cloneChannel = cloneChannels[cloneKey];
     const startDelta = refChannel.firstChangeMs !== null && cloneChannel.firstChangeMs !== null ? cloneChannel.firstChangeMs - refChannel.firstChangeMs : NaN;
     const endDelta = refChannel.lastChangeMs !== null && cloneChannel.lastChangeMs !== null ? cloneChannel.lastChangeMs - refChannel.lastChangeMs : NaN;
     const span = Math.max(1e-9, refChannel.max - refChannel.min);
@@ -643,8 +648,9 @@ export function readGlTrack(dir: string): GlTrack {
 }
 
 export function seriesFor(track: GlTrack, key: string): [number, number][] {
-  const exact = Object.keys(track.channels).filter((k) => k === key);
-  const matches = exact.length ? exact : Object.keys(track.channels).filter((k) => k.endsWith("." + key) || k.endsWith(key));
+  const all = Object.keys(track.channels as Record<string, Channel>);
+  const exact = all.filter((k) => k === key);
+  const matches = exact.length ? exact : all.filter((k) => k.endsWith("." + key) || k.endsWith(key));
   if (matches.length !== 1) {
     throw new Error(matches.length ? `ambiguous channel "${key}": ${matches.join(", ")}` : `no channel "${key}"`);
   }

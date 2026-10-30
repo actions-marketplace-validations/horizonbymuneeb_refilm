@@ -242,13 +242,14 @@ export function fitSeries(input, opts = {}) {
     const magnitude = Math.abs(range);
     // "changed" means moved by more than 1% of the total travel (2px floor for pixel-space props)
     const eps = Math.max(magnitude * 0.01, 0.002);
+    // The curve is "moving" while consecutive samples differ by more than the noise floor. Comparing
+    // against the start value instead would run the window to the end of the recording, because a
+    // finished animation never returns to where it began.
     let firstChange = -1;
-    let lastChange = -1;
     for (let i = 0; i < series.length; i++) {
         if (Math.abs(series[i][1] - start) > eps) {
-            if (firstChange < 0)
-                firstChange = i;
-            lastChange = i;
+            firstChange = i;
+            break;
         }
     }
     if (firstChange < 0) {
@@ -267,14 +268,20 @@ export function fitSeries(input, opts = {}) {
             bestFits: [],
         };
     }
+    let lastMoving = firstChange;
+    for (let i = firstChange + 1; i < series.length; i++) {
+        if (Math.abs(series[i][1] - series[i - 1][1]) > eps)
+            lastMoving = i;
+    }
     const delayMs = series[firstChange][0] - t0;
-    const visibleDurationMs = Math.max(1, series[lastChange][0] - series[firstChange][0]);
+    const visibleDurationMs = Math.max(1, series[lastMoving][0] - series[firstChange][0]);
     // overshoot: how far past the end value the curve travels, relative to the total travel
     const signed = series.map(([, v]) => (v - start) * Math.sign(range || 1));
     const overshoot = magnitude === 0 ? 0 : Math.max(0, (Math.max(...signed) - magnitude) / magnitude);
-    // settle: last moment the value was still outside 1% of the end value
+    // settle: from the first change until the value is last seen outside 1% of the end value. For an
+    // overshooting curve this lands after the overshoot, which is exactly the number a spring needs.
     let settleMs = null;
-    for (let i = series.length - 1; i >= 0; i--) {
+    for (let i = series.length - 1; i >= firstChange; i--) {
         if (Math.abs(series[i][1] - end) > eps) {
             settleMs = Math.round(series[Math.min(series.length - 1, i + 1)][0] - series[firstChange][0]);
             break;
@@ -308,12 +315,15 @@ export function fitSeries(input, opts = {}) {
             const frameMs = Math.max(1, (series[Math.min(series.length - 1, firstChange + 1)][0] - series[anchorIndex][0]) || visibleDurationMs / 10);
             const delays = [0, frameMs * 0.25, frameMs * 0.5, frameMs * 0.75];
             for (const delay of delays) {
-                const lo = visibleDurationMs * 0.6;
-                const hi = visibleDurationMs * maxFactor;
+                // The bracket has to be wide: a tail-heavy curve (expo, quint) looks finished long before
+                // its declared duration ends, so the visible window can be a third of the real duration.
+                // A correct model still wins at its own duration because its residual goes to zero there.
+                const lo = Math.max(16, visibleDurationMs * 0.2);
+                const hi = Math.max(visibleDurationMs * 4, visibleDurationMs * maxFactor);
                 // coarse grid
                 let bestD = lo;
                 let bestR = Number.POSITIVE_INFINITY;
-                const steps = 48;
+                const steps = 64;
                 for (let i = 0; i <= steps; i++) {
                     const d = lo + ((hi - lo) * i) / steps;
                     const r = rmseAt(easing.fn, d, delay);
@@ -398,12 +408,24 @@ export function fitSeries(input, opts = {}) {
 export function diffSeries(a, b) {
     if (!a.length || !b.length)
         return { maxAbsDiff: 0, meanAbsDiff: 0, samples: 0, diffs: [] };
+    // Linear interpolation on the other curve: tracks are sampled per animation frame, and a
+    // nearest-sample lookup would turn sub-frame timing differences into a visible stair step.
     const at = (s, t) => {
-        let best = s[0];
-        for (const p of s)
-            if (Math.abs(p[0] - t) < Math.abs(best[0] - t))
-                best = p;
-        return best[1];
+        if (t <= s[0][0])
+            return s[0][1];
+        const last = s[s.length - 1];
+        if (t >= last[0])
+            return last[1];
+        for (let i = 1; i < s.length; i++) {
+            const [t1, v1] = s[i];
+            if (t1 < t)
+                continue;
+            const [t0, v0] = s[i - 1];
+            if (t1 === t0)
+                return v1;
+            return v0 + ((v1 - v0) * (t - t0)) / (t1 - t0);
+        }
+        return last[1];
     };
     const diffs = a.map(([t, v]) => ({ t, diff: round3(at(b, t) - v, 3) }));
     const abs = diffs.map((d) => Math.abs(d.diff));

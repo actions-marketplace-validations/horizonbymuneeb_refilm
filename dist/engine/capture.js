@@ -14,10 +14,11 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { ffmpeg, ensureDir, listFrames, pad, writeJson } from "../lib.js";
-import { SCHEMA, VERSION } from "../types.js";
+import { SCHEMA } from "../types.js";
+import { VERSION } from "../lib.js";
 import { outPaths } from "./options.js";
 import { initScript } from "./inpage.js";
-import { CONTEXT_PROBE, trackerScript } from "./tracker.js";
+import { CONTEXT_PROBE, DRAWING_BUFFER_PATCH, trackerScript } from "./tracker.js";
 import { INSPECT_SCRIPT } from "./inspect-script.js";
 import { cropPngFile, deviceCrop, pngSize } from "./crop.js";
 import { prepare, planActions, runTrigger } from "./triggers.js";
@@ -30,6 +31,41 @@ function clearPngs(dir) {
     for (const file of readdirSync(dir))
         if (FRAME_FILE.test(file))
             unlinkSync(join(dir, file));
+}
+/**
+ * Waits for the page to stop registering time sources.
+ *
+ * With the clock held at navigation, a page's module scripts and promise chains finish on the real clock,
+ * which is not the virtual clock the capture steps on. If frame 0 were taken while a module was still
+ * booting, the frame where the render loop first runs would move between captures. So the capturer first
+ * steps a few frames of virtual time and watches how many timers / animation frames the page registers:
+ * once that count stops moving, the page has booted and every later capture takes the same path.
+ */
+async function settleBoot(page, virtual, rounds = 40) {
+    if (!virtual)
+        return;
+    let previous = -1;
+    let stable = 0;
+    for (let round = 0; round < rounds; round++) {
+        const state = await page.evaluate(() => {
+            const clock = window.__filmClock;
+            if (!clock)
+                return null;
+            clock.step(1000 / 60);
+            return clock.state();
+        });
+        if (!state)
+            return;
+        if (state.signups === previous) {
+            if (++stable >= 4)
+                return;
+        }
+        else {
+            stable = 0;
+            previous = state.signups;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5));
+    }
 }
 async function networkQuiet(page, inflight, waitMs, virtual) {
     const until = Date.now() + waitMs;
@@ -85,9 +121,13 @@ export async function capturePage(opts, hooks = {}) {
         else if (process.platform === "linux")
             launchArgs.push("--use-angle=vulkan", "--enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan");
     }
-    // wheel scrolling is animated on the compositor's real clock, which a virtual capture cannot wait for
-    if (virtual)
-        launchArgs.push("--disable-smooth-scrolling");
+    if (virtual) {
+        // Deterministic compositing. Without these the compositor rasterises and dithers a canvas on its own
+        // real-clock schedule, so two captures of the same GPU page can differ by a shade on a few frames.
+        // (--deterministic-mode is deliberately absent: it stops the real animation frames the capture awaits
+        // before each screenshot, which deadlocks the frame loop.)
+        launchArgs.push("--disable-smooth-scrolling", "--run-all-compositor-stages-before-draw", "--disable-new-content-rendering-timeout", "--disable-threaded-animation", "--disable-threaded-scrolling", "--disable-checker-imaging", "--disable-partial-raster", "--force-color-profile=srgb", "--disable-lcd-text");
+    }
     progress({ phase: "launch", detail: `chromium (${opts.gpu} gl, ${opts.viewport.width}x${opts.viewport.height} @${opts.scale}x)` });
     const browser = await chromium.launch({ headless: !opts.headed, args: launchArgs });
     let context = null;
@@ -102,6 +142,8 @@ export async function capturePage(opts, hooks = {}) {
         // order matters: the clock replaces the time APIs first, the GPU tracer wraps rAF on top of it, and
         // the tracker samples last so it sees the final rAF
         await context.addInitScript(CONTEXT_PROBE);
+        if (virtual)
+            await context.addInitScript(DRAWING_BUFFER_PATCH);
         if (virtual || opts.seed !== null) {
             const clock = { virtual, seed: opts.seed, hz: opts.rafHz, holdAtStart: virtual };
             await context.addInitScript(initScript("clock.js", clock));
@@ -286,6 +328,8 @@ export async function capturePage(opts, hooks = {}) {
             // ---- virtual clock: step, screenshot, repeat
             progress({ phase: "load", detail: "virtual clock held at navigation" });
             await networkQuiet(page, inflight, opts.networkWait, true);
+            await settleBoot(page, true);
+            await networkQuiet(page, inflight, opts.networkWait, true);
             preRollMs = trigger !== "load" ? opts.preRoll : 0;
             if (trigger !== "load") {
                 progress({ phase: "prepare", detail: `settle ${opts.waitBefore} ms of virtual time` });
@@ -315,6 +359,8 @@ export async function capturePage(opts, hooks = {}) {
                 await advanceTo(frameTime);
                 await networkQuiet(page, inflight, opts.networkWait, true);
                 if (opts.video) {
+                    // let the compositor present what this frame drew before reading it back
+                    await page.evaluate(() => window.__filmClock.present());
                     await page.screenshot({ path: join(rawDir, `${pad(k + 1)}.png`), animations: "allow", caret: "initial" });
                 }
             }
@@ -461,6 +507,7 @@ export async function capturePage(opts, hooks = {}) {
             else {
                 progress({ phase: "frames", detail: "cutting frames out of video.webm" });
                 renameSync(recorded, paths.videoWebm);
+                rmSync(videoDir, { recursive: true, force: true });
                 artifacts.push("video.webm");
                 ensureDir(paths.frames);
                 clearPngs(paths.frames);

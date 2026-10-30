@@ -21,7 +21,8 @@ export const INSPECT_SCRIPT = String.raw `(selector) => {
   // ---- libraries: globals, devtools hooks, DOM markers and resource names
   if (probe(() => w.gsap)) libs.push("gsap" + (probe(() => w.ScrollTrigger) ? "+ScrollTrigger" : ""));
   if (probe(() => w.THREE || w.__THREE__)) libs.push("three");
-  if (probe(() => w.PIXI || w.__PIXI_APP__ || w.__PIXI_RENDERER__ || w.__PIXI_APP_INIT__)) libs.push("pixi");
+  // the tracer installs __PIXI_*_INIT__ hooks itself, so only the library's own globals count as evidence
+  if (probe(() => w.PIXI || w.__PIXI_APP__ || w.__PIXI_RENDERER__)) libs.push("pixi");
   if (probe(() => w.pc && w.pc.Application)) libs.push("playcanvas");
   if (probe(() => w.BABYLON)) libs.push("babylon");
   if (probe(() => w.ogl || w.createREGL)) libs.push("ogl");
@@ -39,7 +40,8 @@ export const INSPECT_SCRIPT = String.raw `(selector) => {
   if (probe(() => document.querySelector("astro-island"))) libs.push("astro");
   if (probe(() => document.querySelector(".swiper,.splide,.slick-slider,.embla"))) libs.push("carousel");
   if (probe(() => [...document.styleSheets].some((s) => { try { return [...s.cssRules].some((r) => r.cssText.includes("animation-timeline") || r.cssText.includes("scroll-timeline") || r.cssText.includes("view-timeline")); } catch (e) { return false; } }))) libs.push("css-scroll-driven");
-  if (probe(() => w.GPU && navigator.gpu)) libs.push("webgpu");
+  // a WebGPU-capable browser is not a WebGPU page: only report it when a canvas actually took that context
+
 
   // ---- keyframe rules declared anywhere readable (same-origin sheets; cross-origin ones are noted)
   const keyframes = [];
@@ -132,11 +134,10 @@ export const INSPECT_SCRIPT = String.raw `(selector) => {
       context: c.__filmCtx || null,
       size: [c.width, c.height],
       css: [Math.round(box.x), Math.round(box.y), Math.round(box.width), Math.round(box.height)],
-      attributes: (() => { try { const gl = c.__filmCtx ? null : null; return undefined; } catch (e) { return undefined; } })(),
     };
   });
   if (canvases.some((c) => /webgl/.test(c.context || ""))) libs.push("webgl-canvas");
-  if (canvases.some((c) => c.context === "webgpu")) libs.push("webgpu-canvas");
+  if (canvases.some((c) => c.context === "webgpu")) libs.push("webgpu");
   if (canvases.some((c) => c.context === "2d")) libs.push("canvas2d");
 
   // ---- fonts that actually loaded

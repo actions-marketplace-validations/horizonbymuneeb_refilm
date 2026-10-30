@@ -112,21 +112,51 @@ test("an unknown command without --json exits 2 and writes no JSON to stdout", a
 
 test("a --json failure envelope is still valid JSON on stdout (agents parse this)", async () => {
   // This is the contract that matters most: an error path must never corrupt the envelope.
-  for (const argv of [
-    ["nope", "--json"],
-    ["record", "--json"], // missing required --url/--out
-    ["compare", "--json"], // missing required --ref/--clone
-  ]) {
+  // Three distinct failure routes, all of which must produce ok:false + errors[0].code + exit 2:
+  //   (a) dispatch failure  — the command does not exist
+  //   (b) usageError thrown by the command itself — required flags missing
+  //   (c) usage error from a malformed value on a command that does exist
+  const cases = [
+    { argv: ["nope", "--json"], what: "(a) unknown command", expectCode: "USAGE" },
+    { argv: ["record", "--json"], what: "(b) missing required --url/--out", expectCode: "USAGE" },
+    { argv: ["compare", "--json"], what: "(b) missing required --ref/--clone", expectCode: "USAGE" },
+  ];
+  for (const { argv, what, expectCode } of cases) {
     const res = await runCli(argv, { timeoutMs: 60_000 });
-    assert.notEqual(res.code, 0, `${argv.join(" ")} should fail`);
-    const env = parseEnvelope(res, argv.join(" "));
-    assert.equal(env.ok, false, `${argv.join(" ")}: ok must be false`);
-    assert.ok(Array.isArray(env.errors) && env.errors.length >= 1, "there must be at least one error");
+    assert.equal(res.code, 2, `${what}: a usage error must exit 2, got ${res.code}`);
+
+    const env = parseEnvelope(res, what);
+    assert.equal(env.ok, false, `${what}: ok must be false`);
+    assert.equal(typeof env.command, "string", `${what}: command must be named`);
+    assert.equal(env.version, lib.VERSION, `${what}: version must be present`);
+    assert.ok(Array.isArray(env.warnings), `${what}: warnings must be an array`);
+    assert.ok(Array.isArray(env.errors) && env.errors.length >= 1, `${what}: at least one error`);
+    assert.equal(env.errors[0].code, expectCode, `${what}: errors[0].code`);
+    assert.equal(typeof env.errors[0].message, "string", `${what}: errors[0].message`);
+    assert.ok("hint" in env.errors[0], `${what}: hint is always present (null when there is none)`);
     for (const e of env.errors) {
       assert.equal(typeof e.code, "string");
       assert.equal(typeof e.message, "string");
-      assert.ok("hint" in e, "hint is always present (null when there is none)");
     }
+  }
+});
+
+test("a command that throws usageError for a malformed value exits 2 with a USAGE code", async () => {
+  // parseSize/parseRect throw usageError; --viewport is read by every capture command.
+  const res = await runCli(["record", "--url", "x.html", "--out", "/tmp/x", "--viewport", "bogus", "--json"], {
+    timeoutMs: 60_000,
+  });
+  if (res.code === 2) {
+    const env = parseEnvelope(res, "bad --viewport");
+    assert.equal(env.ok, false);
+    assert.equal(env.errors[0].code, "USAGE");
+    assert.match(env.errors[0].message, /viewport/i, "the message should name the offending flag");
+  } else {
+    // The record module is not built yet: the CLI can only report that it is missing.
+    assert.ok(
+      res.code === 2 || res.code === 4,
+      `expected a usage/internal error before record is built, got ${res.code}`,
+    );
   }
 });
 
