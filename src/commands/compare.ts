@@ -163,12 +163,12 @@ const round = (n: number, digits = 4) => Number(n.toFixed(digits));
 /**
  * Frames where the animation is actually moving.
  *
- * A per-frame floor is the obvious approach and it is the wrong one: the floor that keeps noise out
- * of a still scene also truncates the long tail of a slow ease-out, which is exactly the part that
- * distinguishes a 900ms clone from a 1200ms one. Instead the window is read off the cumulative
- * change: motion starts when 2% of the total change has happened and ends when 98% has. That is
- * scale-free (noise, blur and pixel size all cancel), and it stretches correctly when the clone is
- * slower, which is the measurement the timing gate depends on.
+ * The window is the span of frames whose own change clears a floor above the capture's background
+ * noise. The floor matters more than it looks: too high and the long tail of a slow ease-out is cut
+ * off (which hides a clone that is 300ms too slow), too low and grain keeps the window open to the
+ * last frame. So the floor is derived from the data: the median per-frame change is the background,
+ * and a frame counts as moving at four times that. A small relative term keeps the rule meaningful
+ * for very large or very small captures.
  */
 function motionWindow(activity: number[], fps: number): MotionWindow {
   const n = activity.length;
@@ -182,7 +182,8 @@ function motionWindow(activity: number[], fps: number): MotionWindow {
   // carries a small relative term, so the same rule reads a 4K capture and a 320px capture alike.
   const sorted = [...activity].sort((a, b) => a - b);
   const background = sorted[Math.floor(sorted.length / 2)] ?? 0;
-  const floor = Math.max(0.0005, background * 4, top * 0.01);
+  const peakValue = activity[peak] ?? 0;
+  const floor = Math.max(0.0005, background * 4, peakValue * 0.01);
   let first = -1;
   let last = -1;
   for (let i = 0; i < n; i++) {

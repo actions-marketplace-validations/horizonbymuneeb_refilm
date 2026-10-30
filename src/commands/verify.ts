@@ -337,7 +337,7 @@ function rowChecks(row: SpecRow, m: RowMeasurement, fps: number): VerifyCheck[] 
       checks.push(
         check(`${row.id}.easing`, `${label} easing`, "pass", `${refBest.name} → ${cloneBest.name}`, `family ${refBest.family}`, "same easing family"),
       );
-    } else if (distance !== null && distance <= EASING_LIMIT) {
+    } else if (distance !== null && distance <= EASING_LIMIT && !FAMILY_CONFLICT(refBest.family, cloneBest.family)) {
       checks.push(
         check(
           `${row.id}.easing`,
@@ -384,6 +384,20 @@ function rowChecks(row: SpecRow, m: RowMeasurement, fps: number): VerifyCheck[] 
   }
 
   return checks;
+}
+
+/**
+ * A linear curve against an ease-out is a different *kind* of motion, not a near miss: the
+ * measured distance can land inside 5% purely because a 900 ms ease-out is nearly straight in
+ * its first half. Family conflicts that are this structural must not be forgiven by the
+ * numeric escape hatch.
+ */
+function FAMILY_CONFLICT(a: string, b: string): boolean {
+  if (a === b) return false;
+  const straight = (f: string) => f === "linear";
+  const curved = (f: string) => f === "ease-in" || f === "ease-out" || f === "ease-in-out" || f === "spring";
+  // linear vs any curved family is a structural difference
+  return (straight(a) && curved(b)) || (curved(a) && straight(b));
 }
 
 function cssFromBezier(bezier: [number, number, number, number] | null): string | null {
