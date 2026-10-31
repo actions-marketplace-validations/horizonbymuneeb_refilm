@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- package.json: `author`, `publishConfig` with `provenance: true`
+- README: npm downloads badge
+
+
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

@@ -3,6 +3,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { DIST, runCli, parseEnvelope } from "../helpers.js";
@@ -32,6 +33,8 @@ test("--version prints the version and exits 0", async () => {
   const res = await runCli(["--version"]);
   assert.equal(res.code, 0);
   assert.equal(res.stdout.trim(), lib.VERSION);
+  const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+  assert.equal(res.stdout.trim(), pkg.version, "CLI version must match package.json");
   assert.equal(res.stderr.trim(), "", "version output belongs on stdout only");
 });
 

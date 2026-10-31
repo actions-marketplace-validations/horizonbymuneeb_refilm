@@ -6,7 +6,15 @@ import { join, resolve, dirname, isAbsolute } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-export const VERSION = "0.1.3";
+/** Single source of truth: the version in package.json (dist/ and src/ are both one level down). */
+export const VERSION: string = (() => {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    return String(pkg.version ?? "0.0.0");
+  } catch {
+    return "0.0.0";
+  }
+})();
 
 /** Exit codes are part of the CLI contract: agents and CI branch on these. */
 export const EXIT = {

@@ -3,6 +3,7 @@
 **Record a reference animation, rebuild it in your code, then re-film the copy and compare the two frame by frame until the numbers match.**
 
 [![npm](https://img.shields.io/npm/v/refilm?color=3b6cf6&label=npm)](https://www.npmjs.com/package/refilm)
+[![downloads](https://img.shields.io/npm/dm/refilm?color=3b6cf6)](https://www.npmjs.com/package/refilm)
 [![CI](https://github.com/horizonbymuneeb/refilm/actions/workflows/ci.yml/badge.svg)](https://github.com/horizonbymuneeb/refilm/actions/workflows/ci.yml)
 [![node](https://img.shields.io/node/v/refilm?color=3b6cf6)](https://nodejs.org)
 [![license](https://img.shields.io/npm/l/refilm?color=3b6cf6)](LICENSE)

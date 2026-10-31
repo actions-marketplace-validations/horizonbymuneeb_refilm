@@ -1,32 +1,31 @@
 {
-  "name": "refilm",
-  "version": "0.1.3",
-  "description": "Record a reference animation, rebuild it in your code, re-film the copy and compare frame by frame until it matches.",
-  "keywords": [
-    "animation",
-    "reverse-engineering",
-    "playwright",
-    "motion",
-    "verification",
-    "agent-skill",
-    "cli"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/horizonbymuneeb/refilm.git"
-  },
-  "homepage": "https://horizonbymuneeb.github.io/refilm/",
-  "bugs": {
-    "url": "https://github.com/horizonbymuneeb/refilm/issues"
-  },
   "author": "Muneeb Anjum",
-  "type": "module",
   "bin": {
     "refilm": "./dist/cli.js"
   },
-  "main": "./dist/index.js",
+  "bugs": {
+    "url": "https://github.com/horizonbymuneeb/refilm/issues"
+  },
+  "dependencies": {
+    "pixelmatch": "8.0.0",
+    "playwright": "1.64.1",
+    "pngjs": "7.0.0"
+  },
+  "description": "Record a reference animation, rebuild it in your code, re-film the copy and compare frame by frame until it matches.",
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/pngjs": "^6.0.5",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
@@ -40,8 +39,26 @@
     "README.md",
     "LICENSE"
   ],
-  "engines": {
-    "node": ">=20"
+  "homepage": "https://horizonbymuneeb.github.io/refilm/",
+  "keywords": [
+    "animation",
+    "reverse-engineering",
+    "playwright",
+    "motion",
+    "verification",
+    "agent-skill",
+    "cli"
+  ],
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "name": "refilm",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horizonbymuneeb/refilm.git"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
@@ -49,21 +66,11 @@
     "test:unit": "node --test test/unit/*.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js",
-    "verify:dist": "node scripts/verify-dist.mjs"
+    "verify:dist": "node scripts/verify-dist.mjs",
+    "prepublishOnly": "npm run build && npm test"
   },
-  "license": "MIT",
-  "dependencies": {
-    "pixelmatch": "8.0.0",
-    "playwright": "1.64.1",
-    "pngjs": "7.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.20.5",
-    "@types/pngjs": "^6.0.5",
-    "typescript": "^5.9.3"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "_note": "GitHub Packages requires a scoped name; npm registry uses the unscoped one."
+  "sideEffects": false,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "0.1.4"
 }
