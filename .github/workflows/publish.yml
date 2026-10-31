@@ -89,6 +89,16 @@ jobs:
             echo "present=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Skip when already published
+        id: exists
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          if npm view "refilm@${version}" version >/dev/null 2>&1; then
+            echo "refilm@${version} is already on npm"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
         if: steps.npm_token.outputs.present == 'true'
         run: npm publish --access public --provenance
