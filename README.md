@@ -7,6 +7,7 @@
 [![CI](https://github.com/horizonbymuneeb/refilm/actions/workflows/ci.yml/badge.svg)](https://github.com/horizonbymuneeb/refilm/actions/workflows/ci.yml)
 [![node](https://img.shields.io/node/v/refilm?color=3b6cf6)](https://nodejs.org)
 [![license](https://img.shields.io/npm/l/refilm?color=3b6cf6)](LICENSE)
+[![Marketplace](https://img.shields.io/badge/marketplace-refilm--verify-6f42c1?logo=github)](https://github.com/marketplace/actions/refilm-verify)
 [![docs](https://img.shields.io/badge/docs-horizonbymuneeb.github.io%2Frefilm-3b6cf6)](https://horizonbymuneeb.github.io/refilm/)
 
 <p align="center">
@@ -201,6 +202,7 @@ instead of `refilm compare`.
 
 Posts a summary to the job (mismatch, timing, failing checks), uploads the diff
 images and the HTML report as `refilm-evidence`, and fails the build on drift.
+[Listed on the Marketplace](https://github.com/marketplace/actions/refilm-verify).
 `mode: compare` switches to the frame diff with `threshold` /
 `motion-threshold` budgets.
 
