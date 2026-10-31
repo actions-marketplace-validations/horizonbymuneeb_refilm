@@ -190,6 +190,20 @@ stops the watch — watching the number come down is the point.
 `--once` runs a single iteration (handy in CI), `--spec` gates with `refilm verify`
 instead of `refilm compare`.
 
+## Moving the baseline
+
+When the change is intentional, promote the clone instead of `cp`-ing frames around:
+
+```console
+$ refilm accept --ref .refilm/hero/ref --from .refilm/hero/clone-1 --reason "new hero easing, DS-214"
+backed up 73 frame(s) -> .refilm/hero/ref.bak-2026-10-31_20-35-11
+accepted 76 frame(s) -> .refilm/hero/ref
+audit trail: .refilm/hero/ref/ACCEPTED.md
+```
+
+The old reference is never lost and `ACCEPTED.md` records what was replaced, when and
+why. `--dry-run` prints the plan and writes nothing.
+
 ## GitHub Action
 
 ```yaml

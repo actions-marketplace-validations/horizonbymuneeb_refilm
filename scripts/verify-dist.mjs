@@ -27,7 +27,7 @@ for (const [rel, what] of mustExist) {
 }
 
 // Every command the dispatcher can import must exist as a built module.
-const commands = ["record", "frames", "spec", "compare", "sheet", "fit", "gl", "verify", "report", "watch", "install", "init", "doctor"];
+const commands = ["record", "frames", "spec", "compare", "sheet", "fit", "gl", "verify", "report", "watch", "accept", "install", "init", "doctor"];
 for (const name of commands) {
   const rel = `dist/commands/${name}.js`;
   if (!existsSync(join(root, rel))) problems.push(`${rel} is missing (the "${name}" command would fail to load)`);

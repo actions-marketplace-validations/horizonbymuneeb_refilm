@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+- **`refilm accept`** — promote a measured clone to be the new reference. Backs up the
+  previous capture (frames + metadata) to `<ref>.bak-<timestamp>/`, replaces the frames
+  with exactly the clone's set (a shorter clone leaves no stale tail), carries
+  `capture.json` / `frames.json` / `track.json` across, and appends a dated entry with
+  the reason to `ACCEPTED.md`. `--dry-run`, `--json`.
+- Command page, README section and five integration tests (backup, append, dry run,
+  usage errors, bare frames directory).
+
+### Fixed
+- `accept` resolves both layouts (`<dir>/frames/*.png` and a bare frames directory) and
+  clears stale frames instead of merging the two sets.
+
+
 ## 0.2.0
 
 ### Added

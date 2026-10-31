@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm accept — refilm</title>
+<meta name="description" content="Promote a clone to the reference, with a backup and an audit trail — flags, what it writes, exit codes.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<!-- set before first paint so the mobile nav is collapsed only when JS can
+     reopen it; with JS off the sidebar simply stays expanded and usable -->
+<script>document.documentElement.className += " js";</script>
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.3</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html" >refilm doctor</a></li>
+            <li class="cmd"><a href="watch.html">refilm watch</a></li>
+            <li class="cmd"><a href="accept.html">refilm accept</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main" tabindex="-1">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>accept</h1>
+  <p class="lede" style="margin-bottom:0">Promote a clone to be the new reference, with a backup and an audit trail.</p>
+  <div class="meta">
+    <span><b>Writes</b> reference frames, backup, ACCEPTED.md</span>
+    <span><b>JSON</b> --json</span>
+    <span><b>Exit</b> 0 · 2</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+<pre><code>refilm accept --ref &lt;framesDir&gt; --from &lt;cloneDir&gt; [options]</code></pre>
+
+<h2 id="why">Why this exists</h2>
+<p>
+  Every visual-regression tool needs a way to say "the design changed on purpose, the
+  clone is right". Doing that with <code>cp</code> loses the provenance — what was
+  replaced, when, and why. <code>accept</code> keeps all three and never leaves the
+  old reference unrecoverable.
+</p>
+
+<h2 id="flags">Flags</h2>
+<table>
+  <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>--ref</code></td><td>Reference capture directory (the one being replaced).</td></tr>
+    <tr><td><code>--from</code></td><td>The clone to promote — a capture directory or a bare frames directory.</td></tr>
+    <tr><td><code>--reason</code></td><td>Why the baseline moved. Written verbatim to <code>ACCEPTED.md</code>.</td></tr>
+    <tr><td><code>--dry-run</code></td><td>Print the plan; write nothing.</td></tr>
+    <tr><td><code>--json</code></td><td>Machine-readable result.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="writes">What it writes</h2>
+<ul>
+  <li><code>&lt;refDir&gt;.bak-&lt;timestamp&gt;/</code> — the previous reference (frames and its metadata)</li>
+  <li><code>&lt;refDir&gt;/frames/</code> — replaced with exactly the clone's frames (a shorter clone leaves no stale tail)</li>
+  <li><code>&lt;refDir&gt;/capture.json</code>, <code>frames.json</code>, <code>track.json</code> — carried over when present</li>
+  <li><code>&lt;refDir&gt;/ACCEPTED.md</code> — appended audit trail: time, reason, frame counts, page URL</li>
+</ul>
+
+<h2 id="example">A worked accept</h2>
+<pre><code>refilm compare --ref .refilm/hero/ref --clone .refilm/hero/clone-1 --out .refilm/hero/diff
+# the diff is what you wanted, and the change is intentional:
+refilm accept --ref .refilm/hero/ref --from .refilm/hero/clone-1 --reason "new hero easing, DS-214"</code></pre>
+
+<h2 id="trail">The audit trail</h2>
+<pre><code>## 2026-10-31T20:35:11.578Z
+
+- accepted: 76 frame(s) from `/work/.refilm/hero/clone-1`
+- previous reference: 73 frame(s) — backed up to `/work/.refilm/hero/ref.bak-2026-10-31_20-35-11`
+- metadata carried over: capture.json, frames.json
+- page: file:///work/.refilm/hero/clone-1/index.html
+- reason: new hero easing, DS-214</code></pre>
+
+<h2 id="exit">Exit codes</h2>
+<table>
+  <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>0</code></td><td>Accepted (or a dry run)</td></tr>
+    <tr><td><code>2</code></td><td>Usage error: missing flags, missing directory, or a clone with no frames</td></tr>
+  </tbody>
+</table>
+
+  </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.3 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>
