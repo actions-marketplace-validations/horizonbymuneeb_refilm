@@ -17,6 +17,7 @@ refilm ${VERSION} — clone a reference animation, then prove the copy matches.
   refilm report   --dir <run dir> [--out <file.html>]             one self-contained HTML report
   refilm install  --agent claude|codex|dsh|all                    install the agent skill
   refilm init     [--dir <project>]                               scaffold .refilm/ in a project
+  refilm watch    --url <url> --ref <dir> [--spec <f>]            re-record and re-compare on change
   refilm doctor                                                    check the environment
 
 Common
@@ -43,6 +44,7 @@ const COMMANDS: Record<string, { module: string; summary: string }> = {
   install: { module: "./commands/install.js", summary: "install the agent skill" },
   init: { module: "./commands/init.js", summary: "scaffold a project" },
   doctor: { module: "./commands/doctor.js", summary: "check the environment" },
+  watch: { module: "./commands/watch.js", summary: "re-record and re-compare on change" },
 };
 
 /** Aliases keep the muscle memory from other tools working. */
@@ -52,6 +54,7 @@ const ALIASES: Record<string, string> = {
   sheets: "sheet",
   easing: "fit",
   check: "verify",
+  loop: "watch",
 };
 
 interface Ctx {

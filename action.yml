@@ -1,0 +1,160 @@
+name: "refilm verify"
+description: "Fail the build when an animation drifts: frame-by-frame comparison of a clone against a recorded reference"
+author: "Muneeb Anjum"
+branding:
+  icon: "film"
+  color: "purple"
+
+inputs:
+  spec:
+    description: "Motion spec written by `refilm spec` (verify mode)"
+    required: false
+    default: ""
+  ref:
+    description: "Reference frames directory (the recording you are matching)"
+    required: true
+  clone:
+    description: "Clone frames directory to measure"
+    required: true
+  out:
+    description: "Where to write the compare report and diff images"
+    required: false
+    default: ".refilm/ci"
+  mode:
+    description: "verify (spec gate) or compare (frame diff)"
+    required: false
+    default: "verify"
+  threshold:
+    description: "Mean pixel mismatch budget, 0..1 (compare)"
+    required: false
+    default: ""
+  motion-threshold:
+    description: "Timing error budget in seconds (compare)"
+    required: false
+    default: ""
+  pixel-threshold:
+    description: "pixelmatch colour tolerance 0..1 (compare)"
+    required: false
+    default: ""
+  report:
+    description: "Also build the self-contained HTML report"
+    required: false
+    default: "true"
+  upload-artifact:
+    description: "Upload the report and diff images"
+    required: false
+    default: "true"
+  version:
+    description: "refilm version to run"
+    required: false
+    default: "latest"
+
+outputs:
+  pass:
+    description: "true when the comparison passed"
+    value: ${{ steps.measure.outputs.pass }}
+  mismatch:
+    description: "Mean pixel mismatch, 0..1"
+    value: ${{ steps.measure.outputs.mismatch }}
+  timing:
+    description: "Worst absolute timing error in seconds"
+    value: ${{ steps.measure.outputs.timing }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Install refilm
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "${{ inputs.version }}" = "latest" ]; then npm install -g refilm; else npm install -g "refilm@${{ inputs.version }}"; fi
+        refilm --version
+
+    - id: measure
+      name: Measure the animation
+      shell: bash
+      run: |
+        set -uo pipefail
+        MODE="${{ inputs.mode }}"
+        if [ "$MODE" = "verify" ] && [ -z "${{ inputs.spec }}" ]; then
+          echo "::error::mode=verify needs a spec; pass spec: or set mode: compare"
+          exit 2
+        fi
+
+        set +e
+        if [ "$MODE" = "verify" ]; then
+          refilm verify --spec "${{ inputs.spec }}" --ref "${{ inputs.ref }}" --clone "${{ inputs.clone }}" --json > result.json 2> result.err
+        else
+          ARGS=(--ref "${{ inputs.ref }}" --clone "${{ inputs.clone }}" --out "${{ inputs.out }}" --json)
+          [ -n "${{ inputs.threshold }}" ] && ARGS+=(--threshold "${{ inputs.threshold }}")
+          [ -n "${{ inputs.motion-threshold }}" ] && ARGS+=(--motion-threshold "${{ inputs.motion-threshold }}")
+          [ -n "${{ inputs.pixel-threshold }}" ] && ARGS+=(--pixel-threshold "${{ inputs.pixel-threshold }}")
+          refilm compare "${ARGS[@]}" > result.json 2> result.err
+        fi
+        code=$?
+        set -e
+
+        node -e '
+          const fs = require("fs");
+          const raw = fs.readFileSync("result.json", "utf8").trim();
+          let payload = null;
+          try { payload = JSON.parse(raw.slice(raw.indexOf("{"))); } catch { payload = null; }
+          const data = payload?.data ?? {};
+          const pass = Boolean(data.pass);
+          const mismatch = data.meanMismatch ?? null;
+          const timing = data.timingError
+            ? Math.max(...Object.values(data.timingError).map((value) => Math.abs(Number(value))))
+            : null;
+
+          const lines = [];
+          lines.push(`## refilm ${pass ? "✅ passed" : "❌ failed"}`);
+          lines.push("");
+          if (mismatch !== null) lines.push(`- mean pixel mismatch: **${(mismatch * 100).toFixed(2)}%** (budget ${(Number(data.threshold ?? 0) * 100).toFixed(2)}%)`);
+          if (timing !== null) lines.push(`- worst timing error: **${timing.toFixed(3)}s**`);
+          if (data.frames) lines.push(`- frames compared: ${data.compared ?? data.frames} of ${data.frames}`);
+          if (Array.isArray(data.checks)) {
+            const counts = data.checks.reduce((acc, check) => ((acc[check.status] = (acc[check.status] || 0) + 1), acc), {});
+            lines.push(`- checks: ${counts.pass || 0} pass, ${counts.fail || 0} fail, ${counts.skip || 0} skip`);
+          }
+          for (const failure of data.failures ?? []) lines.push(`  - ${failure}`);
+          if (!payload) lines.push("", "```", raw.slice(0, 2000) || "no output", "```");
+
+          const text = lines.join("\n") + "\n";
+          console.log(text);
+          if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, text);
+          if (process.env.GITHUB_OUTPUT) {
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `pass=${pass}\nmismatch=${mismatch ?? ""}\ntiming=${timing ?? ""}\n`);
+          }
+          process.exit(pass ? 0 : 1);
+        '
+        measured=$?
+        if [ $code -ne 0 ] || [ $measured -ne 0 ]; then
+          echo "--- refilm stderr ---"
+          head -40 result.err || true
+        fi
+        exit $(( code != 0 ? code : measured ))
+
+    - name: Build the HTML report
+      if: ${{ inputs.report == 'true' && always() }}
+      shell: bash
+      run: |
+        set +e
+        if [ -f "${{ inputs.out }}/report.json" ]; then
+          refilm report --dir "${{ inputs.out }}" || true
+        fi
+        exit 0
+
+    - name: Upload the evidence
+      if: ${{ inputs.upload-artifact == 'true' && always() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: refilm-evidence
+        path: |
+          ${{ inputs.out }}
+          result.json
+        if-no-files-found: warn

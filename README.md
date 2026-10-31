@@ -172,6 +172,38 @@ Each helper resolves with the same object the CLI prints under `data`.
 
 The job fails when the motion drifts. That is the point: an animation regression becomes a red build instead of a review comment nobody can measure.
 
+## Watch mode
+
+The loop does not need a human to drive it. `refilm watch` re-records the clone and
+re-measures it whenever the clone changes, printing one line per iteration:
+
+```console
+$ refilm watch --url http://localhost:3000 --ref .refilm/hero/ref
+[12:03:04] 80 frames · 7.74% mismatch (budget 5.00%) · start +0.032s · FAIL · 4.4s
+[12:03:19] 80 frames · 2.10% mismatch (budget 5.00%) · start +0.004s · PASS · 4.5s
+```
+
+It detects changes by mtime for a local file and by ETag/Last-Modified for a URL, so a
+rebuild or a save triggers exactly one new measurement. A failing comparison never
+stops the watch — watching the number come down is the point.
+`--once` runs a single iteration (handy in CI), `--spec` gates with `refilm verify`
+instead of `refilm compare`.
+
+## GitHub Action
+
+```yaml
+- uses: horizonbymuneeb/refilm@v0.2.0
+  with:
+    spec: .refilm/hero/spec.json
+    ref: .refilm/hero/ref
+    clone: .refilm/hero/clone-1
+```
+
+Posts a summary to the job (mismatch, timing, failing checks), uploads the diff
+images and the HTML report as `refilm-evidence`, and fails the build on drift.
+`mode: compare` switches to the frame diff with `threshold` /
+`motion-threshold` budgets.
+
 ## Commands
 
 ```

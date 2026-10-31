@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+- **`refilm watch`** — the dev loop, closed: re-records the clone and re-measures it
+  whenever the page changes (mtime for files, ETag/Last-Modified for URLs), one line
+  per iteration. `--once`, `--interval`, `--spec` (gate with `verify`), and compare
+  budgets (`--threshold`, `--motion-threshold`, `--pixel-threshold`) are forwarded.
+  Record flags are passed through after `--`.
+- **GitHub Action** — `verify`/`compare` in CI with a job summary (mismatch, timing,
+  failing checks), the diff images and the HTML report as an artifact.
+- 4 integration tests for watch (pass, fail, JSON line, usage error).
+
+### Fixed
+- `watch` reports the first line of a `record` error instead of an empty message.
+
+
 ## 0.1.4
 
 - package.json: `author`, `publishConfig` with `provenance: true`

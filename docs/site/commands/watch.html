@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>refilm watch — refilm</title>
+<meta name="description" content="Re-record and re-measure whenever the clone changes — flags, change detection and exit codes.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e1012'/%3E%3Crect x='3' y='5' width='10' height='6' fill='none' stroke='%23e0ab3e' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../site/style.css">
+<!-- set before first paint so the mobile nav is collapsed only when JS can
+     reopen it; with JS off the sidebar simply stays expanded and usable -->
+<script>document.documentElement.className += " js";</script>
+<script src="../../site/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__brand" href="../../index.html">
+    <span class="topbar__name">refilm</span>
+    <span class="topbar__version">v0.1.3</span>
+  </a>
+  <nav class="topbar__nav" aria-label="Project links">
+    <a href="../../site/getting-started.html">Docs</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+    <a href="https://www.npmjs.com/package/refilm">npm</a>
+  </nav>
+  <button class="topbar__menu" type="button" data-nav-toggle aria-expanded="false" aria-controls="sidebar">
+    Menu
+  </button>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Documentation">
+        <div class="sidebar__group">
+          <p class="sidebar__label">Start</p>
+          <ul>
+            <li><a href="../../index.html">Overview</a></li>
+            <li><a href="../../site/getting-started.html">Getting started</a></li>
+            <li><a href="../../site/workflow.html">The workflow</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Commands</p>
+          <ul>
+            <li><a href="../../site/commands/index.html">Command reference</a></li>
+            <li class="cmd"><a href="../../site/commands/record.html">refilm record</a></li>
+            <li class="cmd"><a href="../../site/commands/frames.html">refilm frames</a></li>
+            <li class="cmd"><a href="../../site/commands/spec.html">refilm spec</a></li>
+            <li class="cmd"><a href="../../site/commands/compare.html">refilm compare</a></li>
+            <li class="cmd"><a href="../../site/commands/sheet.html">refilm sheet</a></li>
+            <li class="cmd"><a href="../../site/commands/fit.html">refilm fit</a></li>
+            <li class="cmd"><a href="../../site/commands/gl.html">refilm gl</a></li>
+            <li class="cmd"><a href="../../site/commands/verify.html">refilm verify</a></li>
+            <li class="cmd"><a href="../../site/commands/report.html">refilm report</a></li>
+            <li class="cmd"><a href="../../site/commands/install.html">refilm install</a></li>
+            <li class="cmd"><a href="../../site/commands/init.html">refilm init</a></li>
+            <li class="cmd"><a href="../../site/commands/doctor.html" >refilm doctor</a></li>
+            <li class="cmd"><a href="../../site/commands/watch.html"aria-current="page">refilm watch</a></li>
+          </ul>
+        </div>
+        <div class="sidebar__group">
+          <p class="sidebar__label">Topics</p>
+          <ul>
+            <li><a href="../../site/fidelity.html">Fidelity levels</a></li>
+            <li><a href="../../site/compare-report.html">Reading a compare report</a></li>
+            <li><a href="../../site/canvas.html">Canvas and 3D</a></li>
+            <li><a href="../../site/determinism.html">Determinism</a></li>
+            <li><a href="../../site/agents.html">Using it from an agent</a></li>
+            <li><a href="../../site/changelog.html">Changelog</a></li>
+          </ul>
+        </div>
+  </nav>
+
+  <main class="main" id="main" tabindex="-1">
+    <div class="wrap">
+<div class="cmdhead">
+  <span class="eyebrow">Command reference</span>
+  <h1><span class="refilm">refilm </span>watch</h1>
+  <p class="lede" style="margin-bottom:0">Close the loop: re-record the clone, re-measure it, print one line.</p>
+  <div class="meta">
+    <span><b>Writes</b> clone frames, compare report</span>
+    <span><b>JSON</b> --json (one line per run)</span>
+    <span><b>Exit</b> 0 · 1 · 2</span>
+  </div>
+</div>
+
+<h2 id="synopsis">Synopsis</h2>
+<pre><code>refilm watch --url &lt;url|file.html&gt; --ref &lt;framesDir&gt; [options] [-- record flags...]</code></pre>
+
+<h2 id="flags">Flags</h2>
+<table>
+  <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>--url</code></td><td>Page to record. <code>http(s)</code> is polled by ETag/Last-Modified; a local file by mtime.</td></tr>
+    <tr><td><code>--ref</code></td><td>Reference frames directory the clone is measured against.</td></tr>
+    <tr><td><code>--out</code></td><td>Run directory for the clone and the compare output (default <code>.refilm/watch</code>).</td></tr>
+    <tr><td><code>--spec</code></td><td>Gate with <code>refilm verify</code> instead of <code>refilm compare</code>.</td></tr>
+    <tr><td><code>--interval</code></td><td>Minimum seconds between runs (default 3).</td></tr>
+    <tr><td><code>--once</code></td><td>One iteration then exit — useful in CI.</td></tr>
+    <tr><td><code>--threshold</code>, <code>--motion-threshold</code>, <code>--pixel-threshold</code></td><td>Compare budgets, forwarded verbatim.</td></tr>
+    <tr><td><code>--json</code></td><td>One JSON line per iteration on stdout.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="changes">Change detection</h2>
+<p>
+  For a local file the watcher compares size and mtime; for an HTTP URL it sends a
+  <code>HEAD</code> request and watches <code>ETag</code>, <code>Last-Modified</code> and
+  <code>Content-Length</code>. One rebuild produces exactly one new measurement.
+</p>
+
+<h2 id="output">What it prints</h2>
+<pre><code>[12:03:04] 80 frames · 7.74% mismatch (budget 5.00%) · start +0.032s · FAIL · 4.4s
+[12:03:19] 80 frames · 2.10% mismatch (budget 5.00%) · start +0.004s · PASS · 4.5s</code></pre>
+
+<h2 id="writes">What it writes</h2>
+<ul>
+  <li><code>&lt;out&gt;/clone/</code> — the latest recording (frames, capture.json, video)</li>
+  <li><code>&lt;out&gt;/compare/report.json</code>, <code>report.md</code>, <code>diff/NNNN.png</code></li>
+</ul>
+
+<h2 id="forwarding">Forwarding record flags</h2>
+<pre><code>refilm watch --url http://localhost:3000 --ref .refilm/hero/ref -- --selector ".hero" --duration 1800</code></pre>
+
+<h2 id="exit">Exit codes</h2>
+<table>
+  <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>0</code></td><td>Interrupted, or <code>--once</code> and the comparison passed</td></tr>
+    <tr><td><code>1</code></td><td><code>--once</code> and the comparison failed</td></tr>
+    <tr><td><code>2</code></td><td>Usage error</td></tr>
+  </tbody>
+</table>
+
+  </div>
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>refilm 0.1.3 · MIT</span>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CHANGELOG.md">Changelog</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/CONTRIBUTING.md">Contributing</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/blob/main/SECURITY.md">Security</a>
+    <a href="https://github.com/horizonbymuneeb/refilm/issues/new?template=bug_report.md">Report a bug</a>
+    <a class="sp" href="https://www.npmjs.com/package/refilm">npm</a>
+    <a href="https://github.com/horizonbymuneeb/refilm">GitHub</a>
+  </div>
+</footer>
+</body>
+</html>

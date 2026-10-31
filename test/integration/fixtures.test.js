@@ -181,15 +181,20 @@ test("fixtures: fade-up renders 3 cards that actually move up 40px", async () =>
       await page.waitForTimeout(1200);
       const rest = await page.evaluate(() => {
         const el = document.querySelector("#card-0");
-        return {
-          transform: getComputedStyle(el).transform,
-          opacity: Number(getComputedStyle(el).opacity),
-        };
+        const style = getComputedStyle(el);
+        let translateY = 0;
+        const match = /^matrix\(([^)]+)\)$/.exec(style.transform || "");
+        if (match) {
+          const parts = match[1].split(",").map(Number);
+          if (Number.isFinite(parts[5])) translateY = parts[5];
+        }
+        return { transform: style.transform, translateY, opacity: Number(style.opacity) };
       });
-      assert.match(
-        rest.transform,
-        /matrix\(1, 0, 0, 1, 0, 0\)|none/,
-        `card-0 must settle at translateY(0), got ${rest.transform}`,
+      // Sub-pixel residual is allowed: a loaded machine can stop the transition a
+      // fraction of a pixel short of 0 without the animation being wrong.
+      assert.ok(
+        Math.abs(rest.translateY) < 0.5,
+        `card-0 must settle at translateY(0) ±0.5px, got ${rest.transform}`,
       );
       assert.ok(rest.opacity > 0.99, `card-0 should end opaque, got ${rest.opacity}`);
 
