@@ -100,7 +100,7 @@ jobs:
           fi
 
       - name: Publish to npm
-        if: steps.npm_token.outputs.present == 'true'
+        if: steps.npm_token.outputs.present == 'true' && steps.exists.outputs.skip != 'true'
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
